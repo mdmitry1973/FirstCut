@@ -1,0 +1,89 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity" >
+
+   <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentTop="true"
+        android:orientation="vertical" >
+
+        <LinearLayout
+            android:id="@+id/buttonPortManger"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" >
+
+            <Button
+                android:id="@+id/buttonSend"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="onSend"
+                android:text="@string/Send" />
+
+            <Button
+                android:id="@+id/buttonClear"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/Clear" />
+
+            <ToggleButton
+                android:id="@+id/buttonTools"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:drawableTop="@drawable/line"
+                android:gravity="center"
+                android:textOff=""
+                android:textOn=""
+                android:textSize="0dp" />
+
+            <ToggleButton
+                android:id="@+id/buttonHand"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:drawableTop="@drawable/move"
+                android:gravity="center"
+				android:textOff=""
+				android:textOn=""
+				android:textSize="0dp" />
+            
+            <Button
+                android:id="@+id/buttonObject"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/EditTool" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" >
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" >
+                <FrameLayout
+                    android:layout_width="50dp"
+                    android:layout_height="50dp" >
+                </FrameLayout>
+                <com.mdmitry1973.firstcut.RulerViewer
+                    android:id="@+id/rulerHorView"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp" />
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" >
+                <com.mdmitry1973.firstcut.RulerViewer
+                    android:id="@+id/rulerVerView"
+                    android:layout_width="50dp"
+                    android:layout_height="match_parent" />
+                <com.mdmitry1973.firstcut.PageViewer
+                    android:id="@+id/pageCutView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</RelativeLayout>
