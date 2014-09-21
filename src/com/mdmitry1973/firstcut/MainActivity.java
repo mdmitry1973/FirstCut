@@ -1,14 +1,18 @@
 package com.mdmitry1973.firstcut;
 
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.StringReader;
 import java.io.StringWriter;
+import java.io.Writer;
 import java.net.Socket;
 import java.nio.charset.CharsetEncoder;
 import java.util.ArrayList;
@@ -38,16 +42,19 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.graphics.PointF;
 import android.graphics.drawable.Drawable;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ToggleButton;
 
-public class MainActivity extends Activity implements DialogInterface.OnDismissListener, ToolsDialogInterface  {
+public class MainActivity extends Activity 
+		implements DialogInterface.OnDismissListener, ToolsDialogInterface  {
 	
 	public ProgressDialog progressDialog;
 	
@@ -59,16 +66,21 @@ public class MainActivity extends Activity implements DialogInterface.OnDismissL
 	MainActivity m_activity = null;
 	
 	Button clearBtn;
-    //Button lineBtn;
-    //Button penBtn;
+	ImageButton saveOpenShareBtn;
     ToggleButton handBtn;
     ToggleButton toolBtn;
+    
+    EditText xEdit;
+    EditText yEdit;
+    EditText widthEdit;
+    EditText heightEdit;
 	
 	enum ToolType {
 		Line,
 		Pen,
 		Box,
-		Hand
+		Hand,
+		Resize
 	};
 	
 	/*
@@ -204,6 +216,11 @@ public class MainActivity extends Activity implements DialogInterface.OnDismissL
 	   	rulerHor = (RulerViewer) findViewById(R.id.rulerHorView);
 	   	rulerVer = (RulerViewer) findViewById(R.id.rulerVerView);
 	   	
+	   	xEdit = (EditText) findViewById(R.id.editTextX);
+	    yEdit = (EditText) findViewById(R.id.editTextY);
+	    widthEdit = (EditText) findViewById(R.id.editTextWidth);
+	    heightEdit = (EditText) findViewById(R.id.editTextHeight);
+	   	
 	   	rulerVer.setVertical(true);
 	   	
 	   	rulerHor.setSecondRuler(rulerVer);
@@ -213,6 +230,7 @@ public class MainActivity extends Activity implements DialogInterface.OnDismissL
 		
 		pageViewer.setVertical(rulerVer);
 		pageViewer.setHorizantal(rulerHor);
+		pageViewer.setMainActivity(this);
 		
 	 	clearBtn = (Button)findViewById(R.id.buttonClear);
         clearBtn.setOnClickListener(new OnClickListener(){
@@ -223,6 +241,15 @@ public class MainActivity extends Activity implements DialogInterface.OnDismissL
 				//drawView.setLastBrushSize(mediumBrush);
 				//brushDialog.dismiss();
 				pageViewer.Clear();
+			}
+		});
+        
+        saveOpenShareBtn = (ImageButton)findViewById(R.id.buttonSaveOpenShare);
+        saveOpenShareBtn.setOnClickListener(new OnClickListener(){
+			@Override
+			public void onClick(View v) {
+				OpenSaveShareDialog dialog = new OpenSaveShareDialog(m_activity, m_activity);
+	    		dialog.show();
 			}
 		});
         
@@ -237,28 +264,9 @@ public class MainActivity extends Activity implements DialogInterface.OnDismissL
 					((ToggleButton)v).setChecked(true);
 				}
 				
-				handBtn.setChecked(false);
-				
 				ToolsDialog dialog = new ToolsDialog(m_activity);
 				dialog.SetToolInterface(m_activity);
 	    		dialog.show();
-			}
-		});
-        
-        handBtn = (ToggleButton)findViewById(R.id.buttonHand);
-        handBtn.setOnClickListener(new OnClickListener(){
-			@Override
-			public void onClick(View v) {
-				boolean on = ((ToggleButton)v).isChecked();
-				
-				if (on == false)
-				{
-					((ToggleButton)v).setChecked(true);
-				}
-				
-				pageViewer.SetCurrentTool(MainActivity.ToolType.Hand);
-				
-				toolBtn.setChecked(false);
 			}
 		});
 	}
@@ -556,10 +564,236 @@ public class MainActivity extends Activity implements DialogInterface.OnDismissL
 			{
 				drawableTop = getResources().getDrawable(R.drawable.pen);
 			}
+			else
+				if (type == ToolType.Hand)
+				{
+					drawableTop = getResources().getDrawable(R.drawable.move);
+				}
+				else
+					if (type == ToolType.Resize)
+					{
+						drawableTop = getResources().getDrawable(R.drawable.resize);
+					}
 		
 		toolBtn.setCompoundDrawablesWithIntrinsicBounds(null, drawableTop , null, null);
 		
 		pageViewer.SetCurrentTool(type);
+	}
+	
+	public void WriteObjectsToString(Writer out)
+	{
+		try{
+			
+			ArrayList<CutObject> listPaths = pageViewer.getObjects();
+			DisplayMetrics metrics = getResources().getDisplayMetrics();
+	  		BufferedWriter fileBuffer = new BufferedWriter(out);
+	  		
+	  		fileBuffer.write("IN;");
+	  		fileBuffer.newLine();
+	  		
+			for(int i = 0; i < listPaths.size(); i++)
+			{
+				CutObject object = listPaths.get(i);
+				
+				if (object.getType() == CutObject.CutObjectType.Line)
+				{
+					ArrayList<PointF> points = object.getObjectPath();
+					
+					if (points.size() > 1)
+					{
+						PointF p1 = points.get(0);
+						PointF p2 = points.get(1);
+						
+						fileBuffer.write(String.format("PA;PU%d,%d;PD%d,%d,%d,%d;", 
+								(int)(p1.x/metrics.densityDpi*1016), (int)(p1.y/metrics.densityDpi*1016),
+								(int)(p1.x/metrics.densityDpi*1016), (int)(p1.y/metrics.densityDpi*1016),
+								(int)(p2.x/metrics.densityDpi*1016), (int)(p2.y/metrics.densityDpi*1016)));
+						fileBuffer.newLine();
+					}
+				}
+				else
+				if (object.getType() == CutObject.CutObjectType.Pen)
+				{
+					ArrayList<PointF> points = object.getObjectPath();
+					
+					if (points.size() > 1)
+					{
+						PointF p1 = points.get(0);
+						
+						fileBuffer.write(String.format("PA;PU%d,%d;PD%d,%d", 
+								(int)(p1.x/metrics.densityDpi*1016), (int)(p1.y/metrics.densityDpi*1016),
+								(int)(p1.x/metrics.densityDpi*1016), (int)(p1.y/metrics.densityDpi*1016)));
+						
+						for(int t = 1; t < points.size(); t++)
+						{
+							PointF p2 = points.get(t);
+							
+							fileBuffer.write(String.format(",%d,%d",
+									(int)(p2.x/metrics.densityDpi*1016), (int)(p2.y/metrics.densityDpi*1016)));
+						}
+						
+						fileBuffer.write(";");
+						
+						fileBuffer.newLine();
+					}
+				}
+				else
+				if (object.getType() == CutObject.CutObjectType.Box)
+				{
+					
+				}
+				
+				fileBuffer.newLine();
+			}
+			
+			fileBuffer.close();
+  		}
+		catch(Exception ex)
+		{
+			Log.v("MainActivity", "SaveData " + ex);
+		}
+	}
+	
+	public void SaveData(File filePath)
+	{
+		try{
+			
+			WriteObjectsToString(new FileWriter(filePath));
+  		}
+		catch(Exception ex)
+		{
+			Log.v("MainActivity", "SaveData " + ex);
+		}
+	}
+	
+	public void OpenData(File filePath)
+	{
+		try{
+			ArrayList<CutObject> listPaths = new ArrayList<CutObject>();
+			DisplayMetrics metrics = getResources().getDisplayMetrics();
+			BufferedReader fileBuffer = new BufferedReader(new FileReader(filePath));
+			
+	  		while(fileBuffer.ready())
+			{
+	  			String serviceLine = fileBuffer.readLine();
+	  			
+	  			if (serviceLine != null)
+	  			{
+	  				if (serviceLine.startsWith("IN;") == true)//header
+	  				{
+	  					
+	  				}
+	  				else
+	  				if (serviceLine.startsWith("PA;PU") == true)//line or pen
+		  			{
+	  					String []arrCommands = serviceLine.split(";");
+	  					
+	  					if (arrCommands.length > 2)
+	  					{
+	  						String line = arrCommands[2].substring(2);
+	  						String []arrPoints = line.split(",");
+	  						ArrayList<PointF> points = new ArrayList<PointF>();
+	  						
+		  					for(int i = 0; i < arrPoints.length; i = i + 2)
+		  					{
+		  						PointF point = new PointF();
+		  						int x = Integer.parseInt(arrPoints[i]);
+		  						int y = Integer.parseInt(arrPoints[i + 1]);
+		  						
+		  						point.x = (float)x * metrics.densityDpi / 1016.0f;
+		  						point.y = (float)y * metrics.densityDpi / 1016.0f;
+		  						
+		  						points.add(point);
+		  					}
+		  					
+		  					if (points.size() > 1)
+		  					{
+		  						CutObject obj = new CutObject();
+		  						
+		  						if (points.size() > 2)
+			  					{
+		  							obj.setType(CutObject.CutObjectType.Pen);
+			  					}
+		  						else
+		  						{
+		  							obj.setType(CutObject.CutObjectType.Line);
+		  						}
+		  						
+		  						obj.add(points);
+		  						
+		  						listPaths.add(obj);
+		  					}
+	  					}
+		  			}
+	  			}
+			}
+	  		
+	  		pageViewer.setObjects(listPaths);
+	  		pageViewer.DrawBitmap();
+	  		pageViewer.invalidate();
+			
+			fileBuffer.close();
+  		}
+		catch(Exception ex)
+		{
+			Log.v("MainActivity", "OpenData " + ex);
+		}
+	}
+	
+	public void ShareData()
+	{
+		StringWriter outputWriter = new StringWriter();
+		
+		try {
+		
+			WriteObjectsToString(outputWriter);
+			
+			Intent i = new Intent(Intent.ACTION_SEND);
+			i.setType("message/rfc822");
+			i.putExtra(Intent.EXTRA_EMAIL, new String[] {""});
+			i.putExtra(Intent.EXTRA_SUBJECT, "Cut job");
+			i.putExtra(Intent.EXTRA_TEXT, outputWriter.toString());
+			
+			startActivity(Intent.createChooser(i, "Send mail..."));
+			
+		} catch (Exception ex) {
+			Log.v("MainActivity", "ShareData " + ex);
+		}
+	}
+	
+	public void setSelObjectCoor(float x, float y, float width, float height)
+	{
+		DisplayMetrics metrics = getResources().getDisplayMetrics();
+		SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+		
+    	int currentUnit = sharedPrefs.getInt("unit", 0);
+		
+		float xInch = (float)x / metrics.densityDpi;
+		float yInch = (float)y / metrics.densityDpi;
+		
+		float widthInch = (float)width / metrics.densityDpi;
+		float heightInch = (float)height / metrics.densityDpi;
+		
+		if (currentUnit == 1)//mm
+		{
+			xInch = xInch * 0.0393701f;
+			yInch = yInch * 0.0393701f;
+			widthInch = widthInch * 0.0393701f;
+			heightInch = heightInch * 0.0393701f;
+		}
+		else
+		if (currentUnit == 2)//cm
+		{
+			xInch = xInch * 0.393701f;
+			yInch = yInch * 0.393701f;
+			widthInch = widthInch * 0.393701f;
+			heightInch = heightInch * 0.393701f;
+		}
+		
+		xEdit.setText(String.format("%.2f", xInch));
+	    yEdit.setText(String.format("%f.2", yInch));
+	    widthEdit.setText(String.format("%.2f", widthInch));
+	    heightEdit.setText(String.format("%.2f", heightInch));
 	}
 }
 

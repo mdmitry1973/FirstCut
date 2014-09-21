@@ -30,6 +30,7 @@
     <string name="Hand">Hand</string>
     <string name="Current_port">Current port</string>
     <string name="Save">Save</string>
+    <string name="Open">Open</string>
     <string name="Unit">Unit</string>
     <string name="Resolution">Resolution</string>
     <string name="DeviceName">Device name</string>
@@ -50,5 +51,13 @@
 	<string name="Warning1">Cannot remove default devices</string>
 	<string name="Warning2">Are you sure want remove device?</string>
 	<string name="Warning3">Cannot find device with this name.</string>
+	<string name="Warning4">File with this name exist. Do you want overwrite?</string>
 	<string name="Paper">Paper</string>
+	<string name="fileName">File name:</string>
+	<string name="FileName">File name:</string>
+	<string name="Tools">Tools</string>
+	<string name="X">X:</string>
+	<string name="Y">Y:</string>
+	<string name="Width">Width:</string>
+	<string name="Height">Height:</string>
 </resources>

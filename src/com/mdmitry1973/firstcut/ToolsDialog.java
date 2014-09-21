@@ -32,6 +32,8 @@ public class ToolsDialog extends Dialog  {
 		setContentView(R.layout.tools);
 		setCanceledOnTouchOutside(false);
 		
+		setTitle(R.string.Tools);
+		
 		dialog = this;
 		
 		ImageButton imageButtonLine = (ImageButton) findViewById(R.id.imageButtonLine);
@@ -53,6 +55,28 @@ public class ToolsDialog extends Dialog  {
 	        public void onClick(View v) {
 	        	
 	        	deligate.ToolsChanged(MainActivity.ToolType.Pen);
+	        	dialog.dismiss();
+	        }
+		});
+		
+		ImageButton imageButtonHand = (ImageButton) findViewById(R.id.imageButtonHand);
+		
+		imageButtonHand.setOnClickListener(new View.OnClickListener() {
+	        @Override
+	        public void onClick(View v) {
+	        	
+	        	deligate.ToolsChanged(MainActivity.ToolType.Hand);
+	        	dialog.dismiss();
+	        }
+		});
+		
+		ImageButton imageButtonResize = (ImageButton) findViewById(R.id.imageButtonResize);
+		
+		imageButtonResize.setOnClickListener(new View.OnClickListener() {
+	        @Override
+	        public void onClick(View v) {
+	        	
+	        	deligate.ToolsChanged(MainActivity.ToolType.Resize);
 	        	dialog.dismiss();
 	        }
 		});
