@@ -132,6 +132,8 @@ public class RulerViewer extends View implements ChooseUnitInterface
 		double dip = 0;
 		float height = 10;
 		float[] pts = new float[4];
+		float[] ptsPre = new float[4];
+		float[] ptsStep = new float[4];
 		
 		if (bVertical == true)
 		{
@@ -175,23 +177,25 @@ public class RulerViewer extends View implements ChooseUnitInterface
 		
 		while(pixPoint < maxLen)
 		{
-			double unitPointFinal = unitPoint + offset/dip;
+			double unitPointFinal = unitPoint;
 			double remainderMM10 = 0;
 			
 			if (currentUnit == 1)//mm
 			{
-				unitPointFinal = (unitPoint + offset) * 0.0393701;
+				unitPointFinal = (unitPoint/* + offset*/) * 0.0393701;
 				remainderMM10 = Math.IEEEremainder(unitPoint, 10);
 			}
 			else
 			if (currentUnit == 2)//cm
 			{
-				unitPointFinal = (unitPoint + offset) * 0.393701;
+				unitPointFinal = (unitPoint /*+ offset*/) * 0.393701;
+			}
+			else//inch
+			{
+				//unitPointFinal = (unitPoint/* + offset*/) * 0.0393701;
 			}
 			
-			unitPointFinal = unitPointFinal * zoom;
-			
-			pixPoint = (int)(unitPointFinal*dip);
+			pixPoint = (int)(unitPointFinal*dip*zoom + offset);
 			
 			if (bVertical == true)
 			{
@@ -227,6 +231,90 @@ public class RulerViewer extends View implements ChooseUnitInterface
 					
 					drawCanvas.drawLines(pts, linePaint);
 				}
+			}
+			else
+			if (currentUnit == 0)//inch
+			{
+				if (unitPoint != 0)
+				{
+					if (bVertical == true)
+					{
+						float step = (pts[1] - ptsPre[1])/32;
+						boolean swichStep = false;
+						int counter = 0;
+						
+						ptsStep[0] = ptsPre[0];
+						ptsStep[1] = ptsPre[1];
+						ptsStep[2] = ptsPre[2];
+						ptsStep[3] = ptsPre[3];
+						
+						for(float s = ptsPre[1]; s < pts[1]; s = s + step, counter++)
+						{
+							ptsStep[1] = ptsStep[1] + step;
+							ptsStep[3] = ptsStep[3] + step;
+							
+							if (swichStep == false)
+							{
+								ptsStep[0] = height*0.9f;
+								swichStep = true;
+							}
+							else
+							{
+								ptsStep[0] = height*0.8f;
+								swichStep = false;
+							}
+							
+							if (counter == 15)
+							{
+								ptsStep[0] = height*0.7f;
+							}
+							
+							drawCanvas.drawLines(ptsStep, linePaint);
+						}
+					}
+					else
+					{
+						float step = (pts[0] - ptsPre[0])/32;
+						boolean swichStep = false;
+						int counter = 0;
+						
+						ptsStep[0] = ptsPre[0];
+						ptsStep[1] = height*0.8f;
+						ptsStep[2] = ptsPre[2];
+						ptsStep[3] = ptsPre[3];
+						
+						for(float s = ptsPre[0]; s < pts[0]; s = s + step, counter++)
+						{
+							ptsStep[0] = ptsStep[0] + step;
+							ptsStep[2] = ptsStep[2] + step;
+							
+							if (swichStep == false)
+							{
+								ptsStep[1] = height*0.9f;
+								swichStep = true;
+							}
+							else
+							{
+								ptsStep[1] = height*0.8f;
+								swichStep = false;
+							}
+							
+							if (counter == 15)
+							{
+								ptsStep[1] = height*0.7f;
+							}
+							
+							drawCanvas.drawLines(ptsStep, linePaint);
+						}
+					}
+				}
+				
+				drawCanvas.drawLines(pts, linePaint);
+				
+				ptsPre[0] = pts[0];
+				ptsPre[1] = pts[1];
+				ptsPre[2] = pts[2];
+				ptsPre[3] = pts[3];
 			}
 			else
 			{

@@ -35,13 +35,21 @@ public class CutObject {
 		close();
 	}
 	
-	public RectF getComputeBounds()
+	public static RectF getComputeBounds(ArrayList<PointF> points)
 	{
-		RectF rect = new RectF(50000, 50000, -50000, -50000);
+		RectF rect = new RectF(0, 0, 0, 0);
 		
-		for(int i = 0; i < listPath.size(); i++)
+		if (points.size() > 0)
 		{
-			PointF p = listPath.get(i);
+			rect.left = points.get(0).x;
+			rect.top = points.get(0).y;
+			rect.right = points.get(0).x;
+			rect.bottom = points.get(0).y;
+		}
+		
+		for(int i = 0; i < points.size(); i++)
+		{
+			PointF p = points.get(i);
 			
 			if (p.x < rect.left)
 			{
@@ -65,6 +73,11 @@ public class CutObject {
 		}
 		
 		return rect;
+	}
+	
+	public RectF getComputeBounds()
+	{
+		return getComputeBounds(listPath);
 	}
 	
 	public Matrix getMatrix()

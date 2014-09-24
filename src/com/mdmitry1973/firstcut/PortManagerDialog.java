@@ -22,6 +22,8 @@ import android.widget.SpinnerAdapter;
 
 public class PortManagerDialog extends Dialog implements OnClickListener, DialogInterface.OnDismissListener{
 	
+	private Spinner s;
+	
 	/*
 	@Override
 	public Dialog onCreateDialog(Bundle savedInstanceState) {
@@ -65,6 +67,10 @@ public class PortManagerDialog extends Dialog implements OnClickListener, Dialog
 		((Button)findViewById(R.id.buttonOK)).setOnClickListener(this);
 	    ((Button)findViewById(R.id.buttonCancel)).setOnClickListener(this);
 	    ((Button)findViewById(R.id.buttonManualAdd)).setOnClickListener(this);
+	    ((Button)findViewById(R.id.buttonEdit)).setOnClickListener(this);
+	    ((Button)findViewById(R.id.buttonRemove)).setOnClickListener(this);
+	    
+	    s = (Spinner) findViewById(R.id.spinnerCurrentDevice);
 	    
 	    setListDevices();
 	}
@@ -72,7 +78,6 @@ public class PortManagerDialog extends Dialog implements OnClickListener, Dialog
 	public void setListDevices()
 	{
 		SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getContext());
-		Spinner s = (Spinner) findViewById(R.id.spinnerCurrentDevice);
 		
 		SpinnerAdapter adp = s.getAdapter();
 		String currentName = "";
@@ -96,11 +101,16 @@ public class PortManagerDialog extends Dialog implements OnClickListener, Dialog
 	   		
 	   		for (String strLine : arrPortLines) {
 		   	    String []arr = strLine.split(",");
-		   	    arrLines.add(arr[0]);
 		   	    
-		   	    if (currentName.length() > 0 && arr[0] == currentName)
+		   	    if (arr.length > 2)
 		   	    {
-		   	    	sel = arrLines.size() - 1;
+			   	    arrLines.add(arr[0]);
+			   	    
+			   	    if (currentName.length() > 0 && 
+			   	    	arr[0].contains(currentName) == true)
+			   	    {
+			   	    	sel = arrLines.size() - 1;
+			   	    }
 		   	    }
 		   	}
 	   	}
@@ -128,24 +138,110 @@ public class PortManagerDialog extends Dialog implements OnClickListener, Dialog
 		    case R.id.buttonManualAdd:
 		    	onManualAdd(v);
 		    break;  
+		    case R.id.buttonEdit:
+		    	onEdit(v);
+		    	break; 
+		    case R.id.buttonRemove:
+		    	onRemove(v);
+		    	break; 
 		    default:                
 		        break;
 		   }
 		}   
 	
 	public void onRemove(View v) {
-	   	Log.v("DriverManagerDialog", "onRemove");
-	   	 
+	   	
+	   	int sel = s.getSelectedItemPosition();
+	   	
+	   	if (sel != -1)
+   		{
+	   		SpinnerAdapter adp = s.getAdapter();
+   			String currentName = (String)adp.getItem(sel);
+   			
+   			SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getContext());
+   		   	String strPorts = sharedPrefs.getString("Ports", "");
+   		   	
+   		   	if (!strPorts.isEmpty())
+		   	{
+   		   		ArrayList<String> arrLines = new ArrayList<String>();
+			   	String []arrPortLines = strPorts.split("\n");
+		   		
+		   		for (String strLine : arrPortLines) {
+			   	    String []arr = strLine.split(",");
+			   	    
+			   	    if (arr.length > 2)
+			   	    {
+			   	    	arrLines.add(arr[0]);
+			   	    
+			   	    	if (arr[0].contains(currentName) == false)
+			   	    	{
+			   	    		arrLines.add(strLine);
+			   	    	}
+			   	    }
+			   	}
+		   		
+		   		strPorts = "";
+			   	
+			   	for(int i = 0; i < arrLines.size(); i++)
+			   	{
+			   		strPorts += arrLines.get(i) + "\n";
+			   	}
+			   	
+			   	SharedPreferences.Editor editor = sharedPrefs.edit();
+		    	editor.putString("Ports", strPorts);
+				editor.commit();
+		   	}
+   			
+	   		setListDevices();
+   		}
     }
 	
 	public void onEdit(View v) {
-	   	Log.v("DriverManagerDialog", "onEdit");
+	   	
+	   	int sel = s.getSelectedItemPosition();
 	   	 
+	   	PortSettingsDialog dialog = new PortSettingsDialog(getContext());
+   		dialog.setOnDismissListener(this);
+   		
+   		if (sel != -1)
+   		{
+   			SpinnerAdapter adp = s.getAdapter();
+   			String currentName = (String)adp.getItem(sel);
+   			
+   			SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getContext());
+   		   	String strPorts = sharedPrefs.getString("Ports", "");
+   		   	String portNumner = "";
+   		   	String portIP = "";
+   		   	
+   		   	if (!strPorts.isEmpty())
+   		   	{
+   			   	String []arrPortLines = strPorts.split("\n");
+   		   		
+   		   		for (String strLine : arrPortLines) {
+   			   	    String []arr = strLine.split(",");
+   			   	    
+   			   	    if (arr.length > 2)
+   			   	    {
+	   			   	    if (currentName.length() > 0 && 
+	   			   	    	arr[0].contains(currentName) == true)
+	   			   	    {
+	   			   	    	portNumner =  arr[1];
+	   			   	    	portIP =  arr[2];
+	   			   	    	break;
+	   			   	    }
+   			   	    }
+   			   	}
+   		   	}
+   			
+   		   	if (!portNumner.isEmpty())
+   		   		dialog.setDefaultSettings(currentName, portNumner, portIP);
+   		}
+   		
+		dialog.show();
     }
 	
 	public void onSearch(View v) {
-	   	Log.v("DriverManagerDialog", "onSearch");
-	   	 
+	   
     }
 	
 	@Override
@@ -155,28 +251,18 @@ public class PortManagerDialog extends Dialog implements OnClickListener, Dialog
 	}
 	
 	public void onManualAdd(View v) {
-	   	Log.v("DriverManagerDialog", "onManualAdd");
-	   	
-	   	//PortSettingsDialog newFragment = new PortSettingsDialog();
-   	    //newFragment.show(getFragmentManager(), "PortSettingsDialog");
 	   	
 	   	PortSettingsDialog dialog = new PortSettingsDialog(getContext());
    		dialog.setOnDismissListener(this);
 		dialog.show();
-	   	 
     }
 	
 	public void onCancel(View v) {
-	   	Log.v("DriverManagerDialog", "onCancel");
-	   	 
 	   	cancel();
     }
 	
 	public void onOK(View v) {
-	   	Log.v("DriverManagerDialog", "onOK");
-	   	
-	   	Spinner s = (Spinner) findViewById(R.id.spinnerCurrentDevice);
-		
+	   
 		SpinnerAdapter adp = s.getAdapter();
 		String currentName = "";
 		int sel = s.getSelectedItemPosition();

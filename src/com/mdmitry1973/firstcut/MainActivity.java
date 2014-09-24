@@ -41,20 +41,23 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.graphics.PointF;
+import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.View.OnKeyListener;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ToggleButton;
 
 public class MainActivity extends Activity 
-		implements DialogInterface.OnDismissListener, ToolsDialogInterface  {
+		implements DialogInterface.OnDismissListener, ToolsDialogInterface, SendDialoginterface  {
 	
 	public ProgressDialog progressDialog;
 	
@@ -220,6 +223,22 @@ public class MainActivity extends Activity
 	    yEdit = (EditText) findViewById(R.id.editTextY);
 	    widthEdit = (EditText) findViewById(R.id.editTextWidth);
 	    heightEdit = (EditText) findViewById(R.id.editTextHeight);
+	    
+	    xEdit.setOnKeyListener(new OnKeyListener() {
+	        
+			@Override
+			public boolean onKey(View v, int keyCode, KeyEvent event) {
+				if ((event.getAction() == KeyEvent.ACTION_DOWN) &&
+				    (keyCode == KeyEvent.KEYCODE_ENTER)) 
+				{
+				              // Perform action on key press
+				              //Toast.makeText(HelloFormStuff.this, edittext.getText(), Toast.LENGTH_SHORT).show();
+				         //     return true;
+				}
+				
+				return false;
+			}
+	    });
 	   	
 	   	rulerVer.setVertical(true);
 	   	
@@ -236,11 +255,7 @@ public class MainActivity extends Activity
         clearBtn.setOnClickListener(new OnClickListener(){
 			@Override
 			public void onClick(View v) {
-				//drawView.setErase(false);
-				///drawView.setBrushSize(mediumBrush);
-				//drawView.setLastBrushSize(mediumBrush);
-				//brushDialog.dismiss();
-				pageViewer.Clear();
+				pageViewer.RemoveCurrent();
 			}
 		});
         
@@ -278,7 +293,9 @@ public class MainActivity extends Activity
 	   	
 	   	if (sharedPrefs.contains("Ports"))
 	   	{
-	   		sendData();
+	   		SendDialod  dialog = new SendDialod(this);
+	   		dialog.setSendDialoginterface(this);
+			dialog.show();
 	   	}
 	}
 	
@@ -421,6 +438,11 @@ public class MainActivity extends Activity
         	
        }
 	}
+	 
+	public void OnSendDialog()
+	{
+		sendData();
+	}
 	
 	public void sendData()
 	{
@@ -478,13 +500,12 @@ public class MainActivity extends Activity
 	   	
 	   	if (sharedPrefs.contains("Ports"))
 	   	{
-	   		sendData();
+	   		SendDialod  dialog = new SendDialod(this);
+	   		dialog.setSendDialoginterface(this);
+			dialog.show();
 	   	}
 	   	else
 	   	{
-	   		//DriverManagerDialog newFragment = new DriverManagerDialog();
-	   	    //newFragment.show(getFragmentManager(), "DriverManagerDialog");
-
 	   		PortManagerDialog dialog = new PortManagerDialog(this);
 	   		dialog.setOnDismissListener(this);
 			dialog.show();
@@ -761,18 +782,23 @@ public class MainActivity extends Activity
 		}
 	}
 	
-	public void setSelObjectCoor(float x, float y, float width, float height)
+	public void setSelObjectCoor(RectF rect)
 	{
+		if (rect.isEmpty() == true)
+		{
+			return;
+		}
+		
 		DisplayMetrics metrics = getResources().getDisplayMetrics();
 		SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
 		
     	int currentUnit = sharedPrefs.getInt("unit", 0);
 		
-		float xInch = (float)x / metrics.densityDpi;
-		float yInch = (float)y / metrics.densityDpi;
+		float xInch = (float)rect.left / metrics.densityDpi;
+		float yInch = (float)rect.top / metrics.densityDpi;
 		
-		float widthInch = (float)width / metrics.densityDpi;
-		float heightInch = (float)height / metrics.densityDpi;
+		float widthInch = (float)rect.width() / metrics.densityDpi;
+		float heightInch = (float)rect.height() / metrics.densityDpi;
 		
 		if (currentUnit == 1)//mm
 		{

@@ -60,4 +60,6 @@
 	<string name="Y">Y:</string>
 	<string name="Width">Width:</string>
 	<string name="Height">Height:</string>
+	<string name="Port">Port</string>
+	<string name="Device">Device</string>
 </resources>

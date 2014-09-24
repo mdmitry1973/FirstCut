@@ -9,14 +9,14 @@
         android:layout_height="wrap_content" >
 
         <TextView
-            android:id="@+id/textViewCurrentDevice"
+            android:id="@+id/textViewPort"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/Current_port"
-            android:textAppearance="?android:attr/textAppearanceSmall" />
+            android:text="@string/Port"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
 
         <Spinner
-            android:id="@+id/spinnerCurrentDevice"
+            android:id="@+id/spinnerPorts"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1" />
@@ -27,36 +27,18 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content" >
 
-        <Button
-            android:id="@+id/buttonRemove"
+        <TextView
+            android:id="@+id/textViewDevice"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/Remove" />
+            android:text="@string/Device"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
 
-        <Button
-            android:id="@+id/buttonEdit"
+        <Spinner
+            android:id="@+id/spinnerDevices"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/Edit" />
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" >
-
-        <Button
-            android:id="@+id/buttonSearch"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:enabled="false"
-            android:text="@string/Search" />
-
-        <Button
-            android:id="@+id/buttonManualAdd"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/ManualAdd" />
+            android:layout_weight="1" />
 
     </LinearLayout>
 
@@ -71,10 +53,10 @@
             android:text="@string/Cancel" />
 
         <Button
-            android:id="@+id/buttonOK"
+            android:id="@+id/buttonSend"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/OK" />
+            android:text="@string/Send" />
 
     </LinearLayout>
 

@@ -12,7 +12,7 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="100dp"
             android:orientation="horizontal" >
 
             <Button
@@ -49,12 +49,6 @@
                     android:layout_height="wrap_content"
                     android:text="@string/Clear" />
 
-                <Button
-                    android:id="@+id/buttonObject"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/EditTool" />
-
             </LinearLayout>
 
             <LinearLayout
@@ -77,7 +71,10 @@
                         android:id="@+id/editTextX"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
+                        android:layout_margin="5dp"
+                        android:enabled="false"
+                        android:inputType="numberDecimal"
+                        android:singleLine="true"
                         android:width="80dp" />
 
                 </LinearLayout>
@@ -97,8 +94,11 @@
                         android:id="@+id/editTextY"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:width="80dp" />
+                        android:layout_margin="5dp"
+                        android:enabled="false"
+                        android:singleLine="true"
+                        android:width="80dp" 
+                        android:inputType="numberDecimal"/>
 
                 </LinearLayout>
 
@@ -124,8 +124,11 @@
                         android:id="@+id/editTextWidth"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:width="80dp" />
+                        android:layout_margin="5dp"
+                        android:enabled="false"
+                        android:singleLine="true"
+                        android:width="80dp" 
+                        android:inputType="numberDecimal"/>
 
                 </LinearLayout>
 
@@ -144,8 +147,11 @@
                         android:id="@+id/editTextHeight"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:width="80dp" />
+                        android:layout_margin="5dp"
+                        android:enabled="false"
+                        android:singleLine="true"
+                        android:width="80dp"
+                        android:inputType="numberDecimal" />
 
                 </LinearLayout>
 

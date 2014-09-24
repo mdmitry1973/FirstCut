@@ -21,6 +21,10 @@ import android.widget.EditText;
 
 public class PortSettingsDialog extends Dialog implements OnClickListener{//Fragment implements OnClickListener{
 	
+	private EditText editName;
+	private EditText editPortNumber;
+	private EditText editTextIP;
+	
 	/*
 	@Override
 	public Dialog onCreateDialog(Bundle savedInstanceState) {
@@ -58,8 +62,21 @@ public class PortSettingsDialog extends Dialog implements OnClickListener{//Frag
 		setTitle(R.string.PortSettings);
 		setCanceledOnTouchOutside(false);
 		
+		editName = ((EditText)findViewById(R.id.editTextName));
+	   	editPortNumber = ((EditText)findViewById(R.id.editTextPortNumber));
+	   	editTextIP = ((EditText)findViewById(R.id.editTextIP));
+	   	
+	   	editPortNumber.setText("9100");
+		
 		((Button)findViewById(R.id.buttonOk)).setOnClickListener(this);
 		((Button)findViewById(R.id.buttonCancel)).setOnClickListener(this);
+	}
+	
+	public void setDefaultSettings(String name, String portNumber, String ip)
+	{
+		editName.setText(name);
+		editTextIP.setText(ip);
+	   	editPortNumber.setText(portNumber);
 	}
 	
 	public void onClick(View v) {       
@@ -84,9 +101,9 @@ public class PortSettingsDialog extends Dialog implements OnClickListener{//Frag
 	public void onOK(View v) {
 	   	Log.v("DriverManagerDialog", "onOK");
 	   	
-	   	EditText editName = ((EditText)findViewById(R.id.editTextName));
-	   	EditText editPortNumber = ((EditText)findViewById(R.id.editTextPortNumber));
-	   	EditText editTextIP = ((EditText)findViewById(R.id.editTextIP));
+	   	editName = ((EditText)findViewById(R.id.editTextName));
+	    editPortNumber = ((EditText)findViewById(R.id.editTextPortNumber));
+	    editTextIP = ((EditText)findViewById(R.id.editTextIP));
 	   	
 	   	String portSettings = "";
 	   	
@@ -108,7 +125,7 @@ public class PortSettingsDialog extends Dialog implements OnClickListener{//Frag
 	   		for (String s : arrPortLines) {
 		   	    String []arr = s.split(",");
 		   	    
-		   	    if (arr.length > 3)
+		   	    if (arr.length > 2)
 		   	    {
 		   	    	if (arr[0].contains(editName.getText()) == false)
 		   	    	{
@@ -120,9 +137,11 @@ public class PortSettingsDialog extends Dialog implements OnClickListener{//Frag
 	   	
 	   	arrLines.add(portSettings);
 	   	
+	   	strPorts = "";
+	   	
 	   	for(int i = 0; i < arrLines.size(); i++)
 	   	{
-	   		strPorts = arrLines.get(i) + "\n";
+	   		strPorts += (arrLines.get(i) + "\n");
 	   	}
 	   	
 	   	SharedPreferences.Editor editor = sharedPrefs.edit();
