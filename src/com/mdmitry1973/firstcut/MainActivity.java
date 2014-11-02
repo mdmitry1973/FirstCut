@@ -770,12 +770,12 @@ public class MainActivity extends Activity
 						PointF p4 = new PointF(points.get(0).x, points.get(1).y);
 						
 						fileBuffer.write(String.format("PA;PU%d,%d;PD%d,%d,%d,%d,%d,%d,%d,%d,%d,%d;", 
-								(int)(p1.x/metrics.densityDpi*1016), (int)(p1.y/metrics.densityDpi*1016),
-								(int)(p1.x/metrics.densityDpi*1016), (int)(p1.y/metrics.densityDpi*1016),
-								(int)(p2.x/metrics.densityDpi*1016), (int)(p2.y/metrics.densityDpi*1016),
-								(int)(p3.x/metrics.densityDpi*1016), (int)(p3.y/metrics.densityDpi*1016),
-								(int)(p4.x/metrics.densityDpi*1016), (int)(p4.y/metrics.densityDpi*1016),
-								(int)(p1.x/metrics.densityDpi*1016), (int)(p1.y/metrics.densityDpi*1016)
+								(int)(p1.x/metrics.xdpi*1016), (int)(p1.y/metrics.ydpi*1016),
+								(int)(p1.x/metrics.xdpi*1016), (int)(p1.y/metrics.ydpi*1016),
+								(int)(p2.x/metrics.xdpi*1016), (int)(p2.y/metrics.ydpi*1016),
+								(int)(p3.x/metrics.xdpi*1016), (int)(p3.y/metrics.ydpi*1016),
+								(int)(p4.x/metrics.xdpi*1016), (int)(p4.y/metrics.ydpi*1016),
+								(int)(p1.x/metrics.xdpi*1016), (int)(p1.y/metrics.ydpi*1016)
 								));
 						fileBuffer.newLine();
 					}
@@ -790,8 +790,8 @@ public class MainActivity extends Activity
 						PointF p1 = new PointF(points.get(0).x, points.get(0).y);
 						PointF p2 = new PointF(points.get(1).x, points.get(1).y);
 						Path path = new Path();
-						RectF rect = new RectF(p1.x/metrics.densityDpi*1016, p1.y/metrics.densityDpi*1016, 
-												p2.x/metrics.densityDpi*1016, p2.y/metrics.densityDpi*1016);
+						RectF rect = new RectF(p1.x/metrics.xdpi*1016, p1.y/metrics.ydpi*1016, 
+												p2.x/metrics.xdpi*1016, p2.y/metrics.ydpi*1016);
 						
 						rect.sort();
 						
@@ -858,9 +858,9 @@ public class MainActivity extends Activity
 						PointF p2 = points.get(1);
 						
 						fileBuffer.write(String.format("PA;PU%d,%d;PD%d,%d,%d,%d;", 
-								(int)(p1.x/metrics.densityDpi*1016), (int)(p1.y/metrics.densityDpi*1016),
-								(int)(p1.x/metrics.densityDpi*1016), (int)(p1.y/metrics.densityDpi*1016),
-								(int)(p2.x/metrics.densityDpi*1016), (int)(p2.y/metrics.densityDpi*1016)));
+								(int)(p1.x/metrics.xdpi*1016), (int)(p1.y/metrics.ydpi*1016),
+								(int)(p1.x/metrics.xdpi*1016), (int)(p1.y/metrics.ydpi*1016),
+								(int)(p2.x/metrics.xdpi*1016), (int)(p2.y/metrics.ydpi*1016)));
 						fileBuffer.newLine();
 					}
 				}
@@ -874,15 +874,15 @@ public class MainActivity extends Activity
 						PointF p1 = points.get(0);
 						
 						fileBuffer.write(String.format("PA;PU%d,%d;PD%d,%d", 
-								(int)(p1.x/metrics.densityDpi*1016), (int)(p1.y/metrics.densityDpi*1016),
-								(int)(p1.x/metrics.densityDpi*1016), (int)(p1.y/metrics.densityDpi*1016)));
+								(int)(p1.x/metrics.xdpi*1016), (int)(p1.y/metrics.ydpi*1016),
+								(int)(p1.x/metrics.xdpi*1016), (int)(p1.y/metrics.ydpi*1016)));
 						
 						for(int t = 1; t < points.size(); t++)
 						{
 							PointF p2 = points.get(t);
 							
 							fileBuffer.write(String.format(",%d,%d",
-									(int)(p2.x/metrics.densityDpi*1016), (int)(p2.y/metrics.densityDpi*1016)));
+									(int)(p2.x/metrics.xdpi*1016), (int)(p2.y/metrics.ydpi*1016)));
 						}
 						
 						fileBuffer.write(";");
@@ -953,8 +953,8 @@ public class MainActivity extends Activity
 		  						int x = Integer.parseInt(arrPoints[i]);
 		  						int y = Integer.parseInt(arrPoints[i + 1]);
 		  						
-		  						point.x = (float)x * metrics.densityDpi / 1016.0f;
-		  						point.y = (float)y * metrics.densityDpi / 1016.0f;
+		  						point.x = (float)x * metrics.xdpi / 1016.0f;
+		  						point.y = (float)y * metrics.ydpi / 1016.0f;
 		  						
 		  						points.add(point);
 		  					}
@@ -1025,12 +1025,12 @@ public class MainActivity extends Activity
 		SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
 		
     	int currentUnit = sharedPrefs.getInt("unit", 0);
+    	
+		float xInch = (float)rect.left / metrics.xdpi;
+		float yInch = (float)rect.top / metrics.ydpi;
 		
-		float xInch = (float)rect.left / metrics.densityDpi;
-		float yInch = (float)rect.top / metrics.densityDpi;
-		
-		float widthInch = (float)rect.width() / metrics.densityDpi;
-		float heightInch = (float)rect.height() / metrics.densityDpi;
+		float widthInch = (float)rect.width() / metrics.xdpi;
+		float heightInch = (float)rect.height() / metrics.ydpi;
 		
 		if (currentUnit == 1)//mm
 		{

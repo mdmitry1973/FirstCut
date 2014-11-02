@@ -272,8 +272,8 @@ public class PageViewer extends View
 		widthRealSize = fPaperWidth;
 		heighRealSizet = fPaperHeigh;
 		
-		widthRealSize = widthRealSize * metrics.densityDpi;
-		heighRealSizet = heighRealSizet * metrics.densityDpi;
+		widthRealSize = widthRealSize * metrics.xdpi;
+		heighRealSizet = heighRealSizet * metrics.ydpi;
 		
 		{
 			matrixToDraw = new Matrix();
@@ -1275,6 +1275,7 @@ public class PageViewer extends View
 				}
 			
 			listPath.add(new CutObject((ArrayList<PointF>)currentPath.getObjectPath().clone(), currentObjectType));
+			
 			currentPath.getObjectPath().clear();
 			
 			DrawBitmap();

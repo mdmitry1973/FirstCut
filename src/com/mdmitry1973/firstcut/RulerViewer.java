@@ -93,6 +93,7 @@ public class RulerViewer extends View implements ChooseUnitInterface
 		textPaint = new Paint();
 		textPaint.setColor(Color.BLACK);
 		textPaint.setStrokeWidth(1);
+		textPaint.setTextSize(30); 
 		textPaint.setStyle(Paint.Style.STROKE);
 		textPaint.setStrokeJoin(Paint.Join.ROUND);
 		
