@@ -80,6 +80,38 @@ public class ToolsDialog extends Dialog  {
 	        	dialog.dismiss();
 	        }
 		});
+		
+		ImageButton imageButtonBox = (ImageButton) findViewById(R.id.imageButtonBox);
+		
+		imageButtonBox.setOnClickListener(new View.OnClickListener() {
+	        @Override
+	        public void onClick(View v) {
+	        	
+	        	deligate.ToolsChanged(MainActivity.ToolType.Box);
+	        	dialog.dismiss();
+	        }
+		});
+		
+		ImageButton imageButtonCircle = (ImageButton) findViewById(R.id.imageButtonCircle);
+		
+		imageButtonCircle.setOnClickListener(new View.OnClickListener() {
+	        @Override
+	        public void onClick(View v) {
+	        	
+	        	deligate.ToolsChanged(MainActivity.ToolType.Circle);
+	        	dialog.dismiss();
+	        }
+		});
+		
+		ImageButton imageButtonText = (ImageButton) findViewById(R.id.imageButtonText);
+		
+		imageButtonText.setOnClickListener(new View.OnClickListener() {
+	        @Override
+	        public void onClick(View v) {
+	        	
+	        	deligate.ToolsChanged(MainActivity.ToolType.Text);
+	        	dialog.dismiss();
+	        }
+		});
 	}
-
 }

@@ -20,6 +20,7 @@
     <string name="Cancel">Cancel</string>
     <string name="OK">OK</string>
 	<string name="PortManager">Port Manager</string>
+	<string name="PaperManager">Paper Manager</string>
 	<string name="PortSettings">Port Settings</string>
 	<string name="sending_data">Sending data</string>
 	<string name="please_wait">Please wait</string>
@@ -62,4 +63,11 @@
 	<string name="Height">Height:</string>
 	<string name="Port">Port</string>
 	<string name="Device">Device</string>
+	<string name="no_network">No find network connection.</string>
+	<string name="shortWidth">W:</string>
+	<string name="shortHeight">H:</string>
+	<string name="Text">Text:</string>
+	<string name="PaperName">Paper name:</string>
+	<string name="SaveChanges">Save changes</string>
+	<string name="ChangeName">This paper name exist. Please change name.</string>
 </resources>

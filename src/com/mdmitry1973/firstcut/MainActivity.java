@@ -28,7 +28,11 @@ import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import com.mdmitry1973.firstcut.PaperManagerDialog.PaperManagerDialogInterface;
+
 import android.location.LocationManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -40,6 +44,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.graphics.Path;
+import android.graphics.PathMeasure;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
@@ -57,7 +63,10 @@ import android.widget.ImageButton;
 import android.widget.ToggleButton;
 
 public class MainActivity extends Activity 
-		implements DialogInterface.OnDismissListener, ToolsDialogInterface, SendDialoginterface  {
+		implements 	DialogInterface.OnDismissListener, 
+					ToolsDialogInterface, 
+					SendDialoginterface, 
+					PaperManagerDialog.PaperManagerDialogInterface  {
 	
 	public ProgressDialog progressDialog;
 	
@@ -65,7 +74,7 @@ public class MainActivity extends Activity
 	RulerViewer rulerVer;
 	RulerViewer rulerHor;
 	
-	boolean bEnableFilePort = true;
+	boolean bEnableFilePort = false;
 	MainActivity m_activity = null;
 	
 	Button clearBtn;
@@ -82,6 +91,8 @@ public class MainActivity extends Activity
 		Line,
 		Pen,
 		Box,
+		Circle,
+		Text,
 		Hand,
 		Resize
 	};
@@ -133,6 +144,14 @@ public class MainActivity extends Activity
 		
 		SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
 	   	
+		if (!sharedPrefs.contains("Papers"))
+	   	{
+			SharedPreferences.Editor editor = sharedPrefs.edit();
+	    	editor.putString("Papers", "Letter;8.5;11\nLetter Landscape;11;8.5\n");
+	    	editor.putInt("currentPaperIndex", 0);
+			editor.commit();
+	   	}
+		
 	   	if (!sharedPrefs.contains("Devices"))
 	   	{
 	   		try 
@@ -387,27 +406,118 @@ public class MainActivity extends Activity
   				{
   					CutObject path = objects.get(j);
   					
-  					for (int i = 0; i < path.size(); i++) 
+  					if (path.getType() == CutObject.CutObjectType.Box)
   					{
-  						PointF point = path.get(i);
+  						ArrayList<PointF> points = path.getObjectPath();
   						
-  						double x = point.x/xdpi;
-  						double y = point.y/ydpi;
-  						
-  						x = x*res;
-  						y = y*res;
-  						
-  						if (i == 0)
+  						if (points.size() == 2)
   						{
-  							data += String.format("%s%d,%d%s", upCommand, (int)y, (int)x, separator);
-  							data += String.format(downCommand);
+  							PointF p1 = new PointF(points.get(0).x, points.get(0).y);
+  							PointF p3 = new PointF(points.get(1).x, points.get(1).y);
+  							
+  							PointF p2 = new PointF(points.get(1).x, points.get(0).y);
+  							PointF p4 = new PointF(points.get(0).x, points.get(1).y);
+  							
+  							data += String.format("PA;PU%d,%d;PD%d,%d,%d,%d,%d,%d,%d,%d,%d,%d;", 
+  									(int)(p1.x/xdpi*res), (int)(p1.y/ydpi*res),
+  									(int)(p1.x/xdpi*res), (int)(p1.y/ydpi*res),
+  									(int)(p2.x/xdpi*res), (int)(p2.y/ydpi*res),
+  									(int)(p3.x/xdpi*res), (int)(p3.y/ydpi*res),
+  									(int)(p4.x/xdpi*res), (int)(p4.y/ydpi*res),
+  									(int)(p1.x/xdpi*res), (int)(p1.y/ydpi*res)
+  									);
   						}
-					   
-  						data += String.format("%d,%d,", (int)y, (int)x);
   					}
-  					
-  					data = data.substring(0, data.length() - 1);
-  					data += separator;
+  					else
+  					if (path.getType() == CutObject.CutObjectType.Circle)
+  					{
+  						ArrayList<PointF> points = path.getObjectPath();
+  						
+  						if (points.size() == 2)
+  						{
+  							PointF p1 = new PointF(points.get(0).x, points.get(0).y);
+  							PointF p2 = new PointF(points.get(1).x, points.get(1).y);
+  							Path pathCircle = new Path();
+  							RectF rectCircle = new RectF((float)(p1.x/xdpi*res), (float)(p1.y/xdpi*res), 
+  													(float)(p2.x/ydpi*res), (float)(p2.y/ydpi*res));
+  							
+  							rectCircle.sort();
+  							
+  							pathCircle.addOval(rectCircle, Path.Direction.CCW);
+  							pathCircle.close();
+  							
+  							PathMeasure pathMeasure = new PathMeasure(pathCircle, false);
+  							ArrayList<PointF> outputPoints = new ArrayList<PointF>();
+  							PointF prePoint = new PointF(0, 0);
+  							
+  							for (float distance = 0; distance < pathMeasure.getLength(); distance++) 
+  							{
+  								float[] pos = new float[2];
+  								float[] tan = new float[2];
+  								
+  								if (pathMeasure.getPosTan(distance, pos, tan))
+  								{
+  									PointF newPoint = new PointF(pos[0], pos[1]);
+  									
+  									if (distance == 0)
+  									{
+  										prePoint = new PointF(newPoint.x, newPoint.y);
+  										outputPoints.add(newPoint);
+  									}
+  									else
+  									{
+  										if (Math.abs(newPoint.x - prePoint.x) > 1.0f ||
+  											Math.abs(newPoint.y - prePoint.y) > 1.0f ||
+  											distance == pathMeasure.getLength() - 1)
+  										{
+  											prePoint = new PointF(newPoint.x, newPoint.y);
+  											outputPoints.add(newPoint);
+  										}
+  									}
+  								}
+  							}
+  							
+  							for(int n = 0; n < outputPoints.size(); n++)
+  							{
+  								if (n == 0)
+  								{
+  									data += String.format("PA;PU%d,%d;PD%d,%d", 
+  											(int)outputPoints.get(n).x, (int)outputPoints.get(n).y,
+  											(int)outputPoints.get(n).x, (int)outputPoints.get(n).y);
+  								}
+  								else
+  								{
+  									data += String.format(",%d,%d", 
+  											(int)outputPoints.get(n).x, (int)outputPoints.get(n).y);
+  								}
+  							}
+  							data += separator;
+  						}
+  					}
+  					else
+  					{
+	  					for (int i = 0; i < path.size(); i++) 
+	  					{
+	  						PointF point = path.get(i);
+	  						
+	  						double x = point.x/xdpi;
+	  						double y = point.y/ydpi;
+	  						
+	  						x = x*res;
+	  						y = y*res;
+	  						
+	  						if (i == 0)
+	  						{
+	  							data += String.format("%s%d,%d%s", upCommand, (int)y, (int)x, separator);
+	  							data += String.format(downCommand);
+	  						}
+						   
+	  						data += String.format("%d,%d,", (int)y, (int)x);
+	  					}
+	  					
+	  					data = data.substring(0, data.length() - 1);
+	  					data += separator;
+  					}
 				   
   					data += String.format(upCommand + separator);
 				}
@@ -441,7 +551,21 @@ public class MainActivity extends Activity
 	 
 	public void OnSendDialog()
 	{
-		sendData();
+		ConnectivityManager connMgr = (ConnectivityManager) 
+		getSystemService(Context.CONNECTIVITY_SERVICE);
+		NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+				
+		if (networkInfo != null && networkInfo.isConnected()) 
+		{
+			sendData();
+		}
+		else
+		{
+			AlertDialog.Builder builder = new AlertDialog.Builder(this);
+	    	builder.setMessage(R.string.no_network).setTitle(R.string.app_name).setPositiveButton("Ok", null);
+	    	AlertDialog dialog = builder.create();
+	    	dialog.show();
+		}
 	}
 	
 	public void sendData()
@@ -556,7 +680,9 @@ public class MainActivity extends Activity
 	        
 	        case R.id.action_paper_manager:
 	        {
-	        	
+	        	PaperManagerDialog dialog = new PaperManagerDialog(this);
+	        	dialog.SetPaperManagerDialogInterface(this);
+	    		dialog.show();
 	        }
 	        return true;
 	        
@@ -586,15 +712,30 @@ public class MainActivity extends Activity
 				drawableTop = getResources().getDrawable(R.drawable.pen);
 			}
 			else
-				if (type == ToolType.Hand)
+				if (type == ToolType.Box)
 				{
-					drawableTop = getResources().getDrawable(R.drawable.move);
+					drawableTop = getResources().getDrawable(R.drawable.box);
 				}
 				else
-					if (type == ToolType.Resize)
+					if (type == ToolType.Circle)
 					{
-						drawableTop = getResources().getDrawable(R.drawable.resize);
+						drawableTop = getResources().getDrawable(R.drawable.circle);
 					}
+					else
+						if (type == ToolType.Text)
+						{
+							drawableTop = getResources().getDrawable(R.drawable.text);
+						}
+						else
+							if (type == ToolType.Hand)
+							{
+								drawableTop = getResources().getDrawable(R.drawable.move);
+							}
+							else
+								if (type == ToolType.Resize)
+								{
+									drawableTop = getResources().getDrawable(R.drawable.resize);
+								}
 		
 		toolBtn.setCompoundDrawablesWithIntrinsicBounds(null, drawableTop , null, null);
 		
@@ -616,6 +757,97 @@ public class MainActivity extends Activity
 			{
 				CutObject object = listPaths.get(i);
 				
+				if (object.getType() == CutObject.CutObjectType.Box)
+				{
+					ArrayList<PointF> points = object.getObjectPath();
+					
+					if (points.size() == 2)
+					{
+						PointF p1 = new PointF(points.get(0).x, points.get(0).y);
+						PointF p3 = new PointF(points.get(1).x, points.get(1).y);
+						
+						PointF p2 = new PointF(points.get(1).x, points.get(0).y);
+						PointF p4 = new PointF(points.get(0).x, points.get(1).y);
+						
+						fileBuffer.write(String.format("PA;PU%d,%d;PD%d,%d,%d,%d,%d,%d,%d,%d,%d,%d;", 
+								(int)(p1.x/metrics.densityDpi*1016), (int)(p1.y/metrics.densityDpi*1016),
+								(int)(p1.x/metrics.densityDpi*1016), (int)(p1.y/metrics.densityDpi*1016),
+								(int)(p2.x/metrics.densityDpi*1016), (int)(p2.y/metrics.densityDpi*1016),
+								(int)(p3.x/metrics.densityDpi*1016), (int)(p3.y/metrics.densityDpi*1016),
+								(int)(p4.x/metrics.densityDpi*1016), (int)(p4.y/metrics.densityDpi*1016),
+								(int)(p1.x/metrics.densityDpi*1016), (int)(p1.y/metrics.densityDpi*1016)
+								));
+						fileBuffer.newLine();
+					}
+				}
+				else
+				if (object.getType() == CutObject.CutObjectType.Circle)
+				{
+					ArrayList<PointF> points = object.getObjectPath();
+					
+					if (points.size() == 2)
+					{
+						PointF p1 = new PointF(points.get(0).x, points.get(0).y);
+						PointF p2 = new PointF(points.get(1).x, points.get(1).y);
+						Path path = new Path();
+						RectF rect = new RectF(p1.x/metrics.densityDpi*1016, p1.y/metrics.densityDpi*1016, 
+												p2.x/metrics.densityDpi*1016, p2.y/metrics.densityDpi*1016);
+						
+						rect.sort();
+						
+						path.addOval(rect, Path.Direction.CCW);
+						path.close();
+						
+						PathMeasure pathMeasure = new PathMeasure(path, false);
+						ArrayList<PointF> outputPoints = new ArrayList<PointF>();
+						PointF prePoint = new PointF(0, 0);
+						
+						for (float distance = 0; distance < pathMeasure.getLength(); distance++) 
+						{
+							float[] pos = new float[2];
+							float[] tan = new float[2];
+							
+							if (pathMeasure.getPosTan(distance, pos, tan))
+							{
+								PointF newPoint = new PointF(pos[0], pos[1]);
+								
+								if (distance == 0)
+								{
+									prePoint = new PointF(newPoint.x, newPoint.y);
+									outputPoints.add(newPoint);
+								}
+								else
+								{
+									if (Math.abs(newPoint.x - prePoint.x) > 1.0f ||
+										Math.abs(newPoint.y - prePoint.y) > 1.0f ||
+										distance == pathMeasure.getLength() - 1)
+									{
+										prePoint = new PointF(newPoint.x, newPoint.y);
+										outputPoints.add(newPoint);
+									}
+								}
+							}
+						}
+						
+						for(int n = 0; n < outputPoints.size(); n++)
+						{
+							if (n == 0)
+							{
+								fileBuffer.write(String.format("PA;PU%d,%d;PD%d,%d", 
+										(int)outputPoints.get(n).x, (int)outputPoints.get(n).y,
+										(int)outputPoints.get(n).x, (int)outputPoints.get(n).y));
+							}
+							else
+							{
+								fileBuffer.write(String.format(",%d,%d", 
+										(int)outputPoints.get(n).x, (int)outputPoints.get(n).y));
+							}
+						}
+						fileBuffer.write(";");
+						fileBuffer.newLine();
+					}
+				}
+				else
 				if (object.getType() == CutObject.CutObjectType.Line)
 				{
 					ArrayList<PointF> points = object.getObjectPath();
@@ -820,6 +1052,12 @@ public class MainActivity extends Activity
 	    yEdit.setText(String.format("%f.2", yInch));
 	    widthEdit.setText(String.format("%.2f", widthInch));
 	    heightEdit.setText(String.format("%.2f", heightInch));
+	}
+	
+	public void ResetPaper()
+	{
+		pageViewer.ResetPaperSize();
+		pageViewer.RecalcSize();
 	}
 }
 

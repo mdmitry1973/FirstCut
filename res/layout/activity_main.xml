@@ -12,36 +12,41 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="100dp"
+            android:layout_height="110dp"
             android:orientation="horizontal" >
 
-            <Button
-                android:id="@+id/buttonSend"
+            <LinearLayout
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:onClick="onSend"
-                android:text="@string/Send" />
+                android:layout_height="match_parent"
+                android:orientation="vertical" >
 
-            <ImageButton
-                android:id="@+id/buttonSaveOpenShare"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:src="@drawable/save_open_share" />
+                <Button
+                    android:id="@+id/buttonSend"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:onClick="onSend"
+                    android:text="@string/Send" />
 
-            <ToggleButton
-                android:id="@+id/buttonTools"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:drawableTop="@drawable/line"
-                android:gravity="center"
-                android:textOff=""
-                android:textOn=""
-                android:textSize="0dp" />
+                <ImageButton
+                    android:id="@+id/buttonSaveOpenShare"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/save_open_share" />
+
+            </LinearLayout>
 
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="vertical" >
+
+                <ToggleButton
+                    android:id="@+id/buttonTools"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:drawableTop="@drawable/line"
+                    android:gravity="center"
+                    android:textSize="0dp" />
 
                 <Button
                     android:id="@+id/buttonClear"
@@ -117,7 +122,7 @@
                         android:id="@+id/textViewWidth"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/Width"
+                        android:text="@string/shortWidth"
                         android:textAppearance="?android:attr/textAppearanceSmall" />
 
                     <EditText
@@ -140,7 +145,7 @@
                         android:id="@+id/textViewHeight"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/Height"
+                        android:text="@string/shortHeight"
                         android:textAppearance="?android:attr/textAppearanceSmall" />
 
                     <EditText
@@ -156,6 +161,20 @@
                 </LinearLayout>
 
             </LinearLayout>
+
+            <TextView
+                android:id="@+id/textViewText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/Text"
+                android:textAppearance="?android:attr/textAppearanceSmall" />
+
+            <EditText
+                android:id="@+id/editTextEnter"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ems="10" />
 
         </LinearLayout>
 
@@ -177,16 +196,29 @@
             </LinearLayout>
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" >
+                android:layout_height="wrap_content"
+                
+                 >
                 <com.mdmitry1973.firstcut.RulerViewer
                     android:id="@+id/rulerVerView"
                     android:layout_width="50dp"
                     android:layout_height="match_parent" />
-                <com.mdmitry1973.firstcut.PageViewer
-                    android:id="@+id/pageCutView"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent" />
+
+                <RelativeLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent" 
+                    android:id="@+id/relativeLayoutCutView"
+                    >
+
+                    <com.mdmitry1973.firstcut.PageViewer
+                        android:id="@+id/pageCutView"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent" />
+
+                </RelativeLayout>
+
             </LinearLayout>
         </LinearLayout>
+
     </LinearLayout>
 </RelativeLayout>

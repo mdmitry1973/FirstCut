@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -17,31 +18,42 @@ import android.graphics.PointF;
 import android.graphics.PorterDuff;
 import android.graphics.RectF;
 import android.graphics.Region;
+import android.graphics.Typeface;
+import android.preference.PreferenceManager;
 import android.support.v4.view.GestureDetectorCompat;
+import android.text.Editable;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.GestureDetector.SimpleOnGestureListener;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.ScaleGestureDetector.OnScaleGestureListener;
 import android.view.View;
+import android.view.ViewGroup;
 import android.gesture.Gesture;
 import android.view.GestureDetector.OnGestureListener;
 import android.view.GestureDetector.OnDoubleTapListener;
 import android.view.GestureDetector;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
+import android.widget.RelativeLayout.LayoutParams;
 
 public class PageViewer extends View 
 							implements OnScaleGestureListener,
 										OnGestureListener,
-										OnDoubleTapListener
+										OnDoubleTapListener,
+										View.OnKeyListener
 {
 	private MainActivity mainActivity = null;
 	private Canvas drawCanvas = null;
 	private Bitmap canvasBitmap = null;
-	private Paint backgroundPaint, backgroundDrawCanvas, canvasPaint, selRectPaint, selCirclePaint;
+	private Paint backgroundPaint, backgroundDrawCanvas, canvasPaint, selRectPaint, selCirclePaint, textPaint;
 	private ArrayList<CutObject> listPath;
-	private ArrayList<PointF> currentPath;
+	private CutObject currentPath;
 	private Paint currentPaint;
 	private int selPathIndex = -1;
 	private RectF boundSelRect = null; 
@@ -55,6 +67,9 @@ public class PageViewer extends View
 	private Matrix matrixToReal = null;
 	private PointF downPoint = new PointF(0, 0);
 	
+	private float fPaperWidth = 11f;
+	private float fPaperHeigh = 8.9f;
+	
 	private RulerViewer rulerVer = null;
 	private RulerViewer rulerHor = null;
 	
@@ -63,7 +78,10 @@ public class PageViewer extends View
 	
 	private ScaleGestureDetector scaleGestureDetector;
 	private GestureDetectorCompat mDetector; 
-	//private GestureDetector gd;
+	
+	private final float marginPress = 10.0f;
+	
+	private EditText textEnter = null;
 	
 	enum ScaleType {
 		top,
@@ -127,7 +145,7 @@ public class PageViewer extends View
 		
 		listPath = new ArrayList<CutObject>();
 		
-		currentPath = new ArrayList<PointF>();
+		currentPath = new CutObject();
 		currentPaint = new Paint();
 		
 		currentPaint.setColor(Color.BLACK);
@@ -153,13 +171,51 @@ public class PageViewer extends View
 		selCirclePaint.setStyle(Paint.Style.STROKE);
 		//selRectPaint.setPathEffect(new DashPathEffect(new float[] {10,20}, 0));
 		
+		
+		textPaint = new Paint(Paint.DITHER_FLAG);
+		textPaint.setColor(Color.BLACK);
+		//textPaint.setAntiAlias(true);
+		//textPaint.setStrokeWidth(1);
+		//textPaint.setStyle(Paint.Style.STROKE);
+		
 		offsetPoint.x = 0;
 		offsetPoint.y = 0;
+		
+		ResetPaperSize();
 		
 		scaleGestureDetector = new ScaleGestureDetector(getContext(), this);
 		
 		mDetector = new GestureDetectorCompat(getContext(), this);
         mDetector.setOnDoubleTapListener(this);
+	}
+	
+	public void ResetPaperSize()
+	{
+		SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getContext());
+		int currentPaperIndex = sharedPrefs.getInt("currentPaperIndex", 0);
+		String strPapers = sharedPrefs.getString("Papers", "");
+		
+		if (!strPapers.isEmpty())
+	   	{
+			List<String> arrLines = new ArrayList<String>();
+		   	String []arrPaperLines = strPapers.split("\n");
+	   		
+	   		for (int i = 0; i < arrPaperLines.length; i++) 
+	   		{
+	   			if (i == currentPaperIndex)
+	   			{
+			   	    String []arr = arrPaperLines[i].split(";");
+			   	    
+			   	    if (arr.length > 2)
+			   	    {
+			   	    	fPaperWidth = Float.parseFloat(arr[1]);
+			   			fPaperHeigh = Float.parseFloat(arr[2]);
+			   	    }
+			   	    
+			   	    break;
+	   			}
+		   	}
+	   	}
 	}
 	
 	public ArrayList<CutObject> getObjects()
@@ -176,7 +232,7 @@ public class PageViewer extends View
 	{
 		selPathIndex = -1;
 		listPath.clear();
-		currentPath.clear();
+		currentPath.getObjectPath().clear();
 		DrawBitmap();
 		invalidate();
 	}
@@ -195,7 +251,7 @@ public class PageViewer extends View
 	public void SetCurrentTool(MainActivity.ToolType toolType)
 	{
 		currentToolType = toolType;
-		currentPath.clear();
+		currentPath.getObjectPath().clear();
 		invalidate();
 	}
 	
@@ -203,21 +259,18 @@ public class PageViewer extends View
 	@Override
 	protected void onSizeChanged(int w, int h, int oldw, int oldh) {
 		super.onSizeChanged(w, h, oldw, oldh);
-		//canvasBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
-		//drawCanvas = new Canvas(canvasBitmap);
 		
 		PrepareBitmap();
 		RecalcSize();
-		
-		Log.v("onSizeChanged", "onSizeChanged");
+		DrawBitmap();
 	}
 	
 	public void RecalcSize()
 	{
 		DisplayMetrics metrics = getResources().getDisplayMetrics();
 		
-		widthRealSize = 11f;
-		heighRealSizet = 8.9f;
+		widthRealSize = fPaperWidth;
+		heighRealSizet = fPaperHeigh;
 		
 		widthRealSize = widthRealSize * metrics.densityDpi;
 		heighRealSizet = heighRealSizet * metrics.densityDpi;
@@ -268,18 +321,48 @@ public class PageViewer extends View
 	{
 		try {
 			
-			drawCanvas.drawRect(0, 0, drawCanvas.getWidth(), drawCanvas.getHeight(), backgroundDrawCanvas);
+			drawCanvas.drawRect(-offsetPoint.x, -offsetPoint.y, 
+					((-offsetPoint.x) + drawCanvas.getWidth())*zoomFactor, 
+					((-offsetPoint.y) + drawCanvas.getHeight())*zoomFactor, 
+					backgroundDrawCanvas);
 			
 			for (int i = 0; i < listPath.size(); i++)
 			{
 				ArrayList<PointF> points = listPath.get(i).getObjectPath();
 				
-				for (int n = 1; n < points.size(); n++)
+				CutObject.CutObjectType objectType = listPath.get(i).getType();
+				
+				if (objectType == CutObject.CutObjectType.Text)
 				{
-					PointF p1 = points.get(n - 1);
-					PointF p2 = points.get(n);
 					
-					drawCanvas.drawLine(p1.x , p1.y, p2.x, p2.y, currentPaint);
+				}
+				else
+				if (objectType == CutObject.CutObjectType.Box && points.size() > 1)
+				{
+					RectF rect = new RectF(points.get(0).x, points.get(0).y, points.get(1).x, points.get(1).y);
+					
+					rect.sort();
+					
+					drawCanvas.drawRect(rect, currentPaint);
+				}
+				else
+				if (objectType == CutObject.CutObjectType.Circle && points.size() > 1)
+				{
+					RectF rect = new RectF(points.get(0).x, points.get(0).y, points.get(1).x, points.get(1).y);
+					
+					rect.sort();
+					
+					drawCanvas.drawOval(rect, currentPaint);
+				}
+				else
+				{
+					for (int n = 1; n < points.size(); n++)
+					{
+						PointF p1 = points.get(n - 1);
+						PointF p2 = points.get(n);
+						
+						drawCanvas.drawLine(p1.x , p1.y, p2.x, p2.y, currentPaint);
+					}
 				}
 			}
 			
@@ -287,22 +370,22 @@ public class PageViewer extends View
 			{
 				drawCanvas.drawRect(boundSelRect, selRectPaint);
 				
-				drawCanvas.drawCircle(boundSelRect.left, boundSelRect.top, 5, selCirclePaint);
-				drawCanvas.drawCircle(boundSelRect.left, boundSelRect.bottom, 5, selCirclePaint);
-				drawCanvas.drawCircle(boundSelRect.right, boundSelRect.top, 5, selCirclePaint);
-				drawCanvas.drawCircle(boundSelRect.right, boundSelRect.bottom, 5, selCirclePaint);
+				drawCanvas.drawCircle(boundSelRect.left, boundSelRect.top, marginPress, selCirclePaint);
+				drawCanvas.drawCircle(boundSelRect.left, boundSelRect.bottom, marginPress, selCirclePaint);
+				drawCanvas.drawCircle(boundSelRect.right, boundSelRect.top, marginPress, selCirclePaint);
+				drawCanvas.drawCircle(boundSelRect.right, boundSelRect.bottom, marginPress, selCirclePaint);
 				
-				drawCanvas.drawCircle(boundSelRect.left, boundSelRect.top + (boundSelRect.bottom - boundSelRect.top)/2, 5, selCirclePaint);
-				drawCanvas.drawCircle(boundSelRect.left + (boundSelRect.right - boundSelRect.left)/2, boundSelRect.top, 5, selCirclePaint);
-				drawCanvas.drawCircle(boundSelRect.right, boundSelRect.top + (boundSelRect.bottom - boundSelRect.top)/2, 5, selCirclePaint);
-				drawCanvas.drawCircle(boundSelRect.left + (boundSelRect.right - boundSelRect.left)/2, boundSelRect.bottom, 5, selCirclePaint);
+				drawCanvas.drawCircle(boundSelRect.left, boundSelRect.top + (boundSelRect.bottom - boundSelRect.top)/2, marginPress, selCirclePaint);
+				drawCanvas.drawCircle(boundSelRect.left + (boundSelRect.right - boundSelRect.left)/2, boundSelRect.top, marginPress, selCirclePaint);
+				drawCanvas.drawCircle(boundSelRect.right, boundSelRect.top + (boundSelRect.bottom - boundSelRect.top)/2, marginPress, selCirclePaint);
+				drawCanvas.drawCircle(boundSelRect.left + (boundSelRect.right - boundSelRect.left)/2, boundSelRect.bottom, marginPress, selCirclePaint);
 				
 				PointF centerRect = new PointF(boundSelRect.left + (boundSelRect.right - boundSelRect.left)/2,
 												boundSelRect.top + (boundSelRect.bottom - boundSelRect.top)/2);
 				
 				Bitmap bitmapCenter = BitmapFactory.decodeResource(getResources(), R.drawable.center_move);
 				
-				drawCanvas.drawBitmap(bitmapCenter, centerRect.x - 8, centerRect.y - 8, null);
+				drawCanvas.drawBitmap(bitmapCenter, centerRect.x - bitmapCenter.getWidth()/2, centerRect.y - bitmapCenter.getHeight()/2, null);
 			}
 			
 		} catch (Exception e) {
@@ -321,21 +404,93 @@ public class PageViewer extends View
 			
 			canvas.drawBitmap(canvasBitmap, 0, 0, canvasPaint);
 			
-			for (int n = 1; n < currentPath.size(); n++)
+			ArrayList<PointF> points = currentPath.getObjectPath();
+			CutObject.CutObjectType objectType = currentPath.getType();
+			
+			if (objectType == CutObject.CutObjectType.Box && points.size() > 1)
 			{
-				PointF p1 = currentPath.get(n - 1);
-				PointF p2 = currentPath.get(n);
-				float [] pts = {p1.x, p1.y, p2.x, p2.y };
+				RectF rect = new RectF(points.get(0).x, points.get(0).y, points.get(1).x, points.get(1).y);
 				
-				matrixToDraw.mapPoints(pts);
+				rect.sort();
 				
-				canvas.drawLine(pts[0], pts[1], pts[2], pts[3], currentPaint);
+				matrixToDraw.mapRect(rect);
+				
+				canvas.drawRect(rect, currentPaint);
+			}
+			else
+			if (objectType == CutObject.CutObjectType.Circle && points.size() > 1)
+			{
+				RectF rect = new RectF(points.get(0).x, points.get(0).y, points.get(1).x, points.get(1).y);
+				
+				rect.sort();
+				
+				matrixToDraw.mapRect(rect);
+				
+				canvas.drawOval(rect, currentPaint);
+			}
+			else
+			{
+				for (int n = 1; n < points.size(); n++)
+				{
+					PointF p1 = points.get(n - 1);
+					PointF p2 = points.get(n);
+					
+					float [] pts = {p1.x, p1.y, p2.x, p2.y};
+					
+					matrixToDraw.mapPoints(pts);
+					
+					canvas.drawLine(pts[0], pts[1], pts[2], pts[3], currentPaint);
+				}
 			}
 			
 		} catch (Exception e) {
 	           
 			Log.v("PageViewer", "Error" + e);
 	    }
+	}
+	
+	@Override
+	public boolean onKey(View v, int keyCode, KeyEvent event)
+	{
+		if (currentToolType == MainActivity.ToolType.Text && textEnter != null)
+		{
+			if (currentPath.getType() == CutObject.CutObjectType.Text)
+			{
+				if (keyCode == KeyEvent.KEYCODE_ENTER)
+				{
+					RelativeLayout layout = (RelativeLayout)mainActivity.findViewById(R.id.relativeLayoutCutView);
+					
+					if (layout != null && textEnter != null)
+					{
+						String txt = textEnter.getText().toString();
+						
+						if (txt.length() > 0)
+						{
+							currentPath.setText(txt);
+							currentPath.close();
+							listPath.add(currentPath);
+						}
+						
+						layout.removeView(textEnter);
+						
+						textEnter = null;
+					}
+				}
+				else
+				{
+					String  strText = textEnter.getText().toString();
+					
+					if (strText.length() > 0)
+					{
+						float width = textPaint.measureText(strText);
+					
+						textEnter.setWidth((int)(width) + (strText.length() * 5));
+					}
+				}
+			}
+		}
+		
+		return false;
 	}
 	
 	//register user touches as drawing action
@@ -351,7 +506,7 @@ public class PageViewer extends View
 			
 			if (scaleGestureDetector.isInProgress())
 			{
-				currentPath.clear();
+				currentPath.getObjectPath().clear();
 				
 				return resScale;
 			}
@@ -374,8 +529,6 @@ public class PageViewer extends View
 			
 			if (event.getAction() == MotionEvent.ACTION_UP)
 			{
-				CutObject.CutObjectType currentObjectType = CutObject.CutObjectType.Line;
-				
 				if (currentToolType == MainActivity.ToolType.Resize)
 				{
 					
@@ -386,30 +539,36 @@ public class PageViewer extends View
 					
 				}
 				else
+				if (currentToolType == MainActivity.ToolType.Text)
+				{
+					
+				}
+				else
 				if ((currentToolType == MainActivity.ToolType.Pen ||
-					currentToolType == MainActivity.ToolType.Line) &&
+					currentToolType == MainActivity.ToolType.Line ||
+					currentToolType == MainActivity.ToolType.Box ||
+					currentToolType == MainActivity.ToolType.Circle) &&
 					currentPath.size() > 0)
 				{
 					if (currentToolType == MainActivity.ToolType.Pen)
 					{
-						currentPath.add(new PointF(touchX, touchY));// - offsetPoint.x, touchY - offsetPoint.y));
-						currentObjectType = CutObject.CutObjectType.Pen;
-					
+						currentPath.add(new PointF(touchX, touchY));
 					}
 					else
-						if (currentToolType == MainActivity.ToolType.Line)
+						if (currentToolType == MainActivity.ToolType.Line ||
+							currentToolType == MainActivity.ToolType.Box ||
+							currentToolType == MainActivity.ToolType.Circle)
 						{
 							if (currentPath.size() > 1)
 							{
-								currentPath.remove(currentPath.size() - 1);
+								currentPath.getObjectPath().remove(currentPath.size() - 1);
 							}
 							
-							currentPath.add(new PointF(touchX, touchY));// - offsetPoint.x, touchY - offsetPoint.y));
-							currentObjectType = CutObject.CutObjectType.Line;
+							currentPath.add(new PointF(touchX, touchY));
 						}
 					
-					listPath.add(new CutObject((ArrayList<PointF>)currentPath.clone(), currentObjectType));
-					currentPath.clear();
+					listPath.add(new CutObject((ArrayList<PointF>)currentPath.getObjectPath(), currentPath.getType()));
+					currentPath.getObjectPath().clear();
 					
 					DrawBitmap();
 				}
@@ -568,7 +727,6 @@ public class PageViewer extends View
 	
 	@Override
     public boolean onDown(MotionEvent event) { 
-        Log.d("PageViewer","onDown: " + event.toString());
         
         downPoint.x = event.getX() - offsetPoint.x;
         downPoint.y = event.getY() - offsetPoint.y;
@@ -583,13 +741,89 @@ public class PageViewer extends View
 		touchX = pts[0];
 		touchY = pts[1];
 		
-		currentPath.clear();
+		currentPath.getObjectPath().clear();
 		scaleType = ScaleType.none;
 		
-		if (currentToolType == MainActivity.ToolType.Pen ||
-			currentToolType == MainActivity.ToolType.Line)
+		if (currentToolType == MainActivity.ToolType.Text)
 		{
 			selPathIndex = -1;
+			
+			RelativeLayout layout = (RelativeLayout)mainActivity.findViewById(R.id.relativeLayoutCutView);
+			
+			if (layout != null)
+			{
+				if (textEnter != null)
+				{
+					layout.removeView(textEnter);
+						
+					textEnter = null;
+				}
+				
+				Typeface stringTypeFace = Typeface.create(Typeface.SERIF, Typeface.NORMAL);
+				
+				currentPath.setTypeface(stringTypeFace);
+				currentPath.setType(CutObject.CutObjectType.Text);
+				currentPath.add(new PointF(touchX, touchY));
+				
+				{
+					textEnter = new EditText(this.getContext());
+					
+					textEnter.setWidth(100);
+					textEnter.setHeight(50);
+					textEnter.setOnKeyListener(this);
+					textEnter.setSingleLine(true);
+					textEnter.setTypeface(currentPath.getTypeface());
+					textEnter.setTextSize(currentPath.getStringSize());
+					
+					textPaint.setTypeface(currentPath.getTypeface());
+					textPaint.setTextSize(currentPath.getStringSize());
+					
+					LayoutParams layoutParams=new LayoutParams(100, 50);
+					layoutParams.addRule(RelativeLayout.ABOVE);
+					layoutParams.setMargins((int)event.getX(), (int)event.getY(), 0, 0);
+					layoutParams.width = ViewGroup.LayoutParams.WRAP_CONTENT;
+					
+					layout.addView(textEnter, layoutParams);
+					
+					textEnter.setFocusableInTouchMode(true);
+					textEnter.requestFocus();
+					
+					InputMethodManager imm = (InputMethodManager)this.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+			        if (imm.showSoftInput(textEnter, InputMethodManager.SHOW_IMPLICIT))
+			        {
+			        	
+			        }
+			        else
+			        {
+			        	Log.v("onTouchEvent", "MainActivity.ToolType.Text");
+			        }
+				}
+				
+				invalidate();
+			}
+		}
+		else
+		if (currentToolType == MainActivity.ToolType.Pen ||
+			currentToolType == MainActivity.ToolType.Line ||
+			currentToolType == MainActivity.ToolType.Box ||
+        	currentToolType == MainActivity.ToolType.Circle)
+		{
+			selPathIndex = -1;
+			
+			CutObject.CutObjectType currentObjectType = CutObject.CutObjectType.Pen;
+			
+			if (currentToolType == MainActivity.ToolType.Pen)
+				currentObjectType = CutObject.CutObjectType.Pen;
+			if (currentToolType == MainActivity.ToolType.Line)
+				currentObjectType = CutObject.CutObjectType.Line;
+			if (currentToolType == MainActivity.ToolType.Box)
+				currentObjectType = CutObject.CutObjectType.Box;
+			if (currentToolType == MainActivity.ToolType.Circle)
+				currentObjectType = CutObject.CutObjectType.Circle;
+			if (currentToolType == MainActivity.ToolType.Text)
+				currentObjectType = CutObject.CutObjectType.Text;
+			
+			currentPath.setType(currentObjectType);
 			currentPath.add(new PointF(touchX, touchY));
 			invalidate();
 		}
@@ -598,33 +832,34 @@ public class PageViewer extends View
 		{
 			if (selPathIndex != -1 && boundSelRect != null)
 			{
-				RectF boundRect = new RectF(boundSelRect.left - 5, boundSelRect.top - 5,
-											boundSelRect.right + 5, boundSelRect.bottom + 5);
+				RectF boundRect = new RectF(boundSelRect.left - marginPress, boundSelRect.top - marginPress,
+											boundSelRect.right + marginPress, boundSelRect.bottom + marginPress);
 				
 				if (boundRect.contains(touchX, touchY) == true)
 				{
-					RectF boundRect1 = new RectF(boundSelRect.left - 5, boundSelRect.top - 5,
-													boundSelRect.left + 5, boundSelRect.top + 5);
-					RectF boundRect2 = new RectF(boundSelRect.left - 5, boundSelRect.bottom - 5,
-													boundSelRect.left + 5, boundSelRect.bottom + 5);
-					RectF boundRect3 = new RectF(boundSelRect.right - 5, boundSelRect.top - 5, 
-													boundSelRect.right + 5, boundSelRect.top + 5);
-					RectF boundRect4 = new RectF(boundSelRect.right - 5, boundSelRect.bottom - 5,
-													boundSelRect.right + 5, boundSelRect.bottom + 5);
+					RectF boundRect1 = new RectF(boundSelRect.left - marginPress, boundSelRect.top - marginPress,
+													boundSelRect.left + marginPress, boundSelRect.top + marginPress);
+					RectF boundRect2 = new RectF(boundSelRect.left - marginPress, boundSelRect.bottom - marginPress,
+													boundSelRect.left + marginPress, boundSelRect.bottom + marginPress);
+					RectF boundRect3 = new RectF(boundSelRect.right - marginPress, boundSelRect.top - marginPress, 
+													boundSelRect.right + marginPress, boundSelRect.top + marginPress);
+					RectF boundRect4 = new RectF(boundSelRect.right - marginPress, boundSelRect.bottom - marginPress,
+													boundSelRect.right + marginPress, boundSelRect.bottom + marginPress);
 					
-					RectF boundRect5 = new RectF(boundRect1);
-					boundRect5.offset((boundSelRect.right - boundSelRect.left)/2 + 5, 0);
-					RectF boundRect6 = new RectF(boundRect1);
-					boundRect6.offset(0, (boundSelRect.bottom - boundSelRect.top)/2 + 5);
-					RectF boundRect7 = new RectF(boundRect4);
-					boundRect7.offset(-((boundSelRect.right - boundSelRect.left)/2 + 5), 0);
-					RectF boundRect8= new RectF(boundRect4);
-					boundRect8.offset(0, -((boundSelRect.bottom - boundSelRect.top)/2 + 5));
+					RectF boundRect5 = new RectF(boundSelRect.left + boundSelRect.width()/2 - marginPress, boundSelRect.top - marginPress,
+												boundSelRect.left + boundSelRect.width()/2+ marginPress, boundSelRect.top + marginPress);
+					RectF boundRect6 = new RectF(boundSelRect.left - marginPress, boundSelRect.top + boundSelRect.height()/2 - marginPress,
+												boundSelRect.left + marginPress, boundSelRect.top + boundSelRect.height()/2 + marginPress);
+					RectF boundRect7 = new RectF(boundSelRect.right - boundSelRect.width()/2 - marginPress, boundSelRect.bottom - marginPress,
+												boundSelRect.right - boundSelRect.width()/2 + marginPress, boundSelRect.bottom + marginPress);
+					RectF boundRect8= new RectF(boundSelRect.right - marginPress, boundSelRect.bottom - boundSelRect.height()/2 - marginPress,
+												boundSelRect.right + marginPress, boundSelRect.bottom - boundSelRect.height()/2 + marginPress);
 					
 					PointF centerRect = new PointF(boundSelRect.left + (boundSelRect.right - boundSelRect.left)/2,
 													boundSelRect.top + (boundSelRect.bottom - boundSelRect.top)/2);
 					
-					RectF boundRect9 = new RectF(centerRect.x - 5, centerRect.y - 5, centerRect.x + 5, centerRect.y + 5);
+					RectF boundRect9 = new RectF(centerRect.x - marginPress, centerRect.y - marginPress, 
+							centerRect.x + marginPress, centerRect.y + marginPress);
 				
 					if (boundRect1.contains(touchX, touchY) == true)
 					{
@@ -698,7 +933,9 @@ public class PageViewer extends View
             float distanceY) {
       
         if (currentToolType == MainActivity.ToolType.Pen ||
-        	currentToolType == MainActivity.ToolType.Line)
+        	currentToolType == MainActivity.ToolType.Line ||
+        	currentToolType == MainActivity.ToolType.Box ||
+        	currentToolType == MainActivity.ToolType.Circle)
 		{
         	float touchX = e2.getX();
     		float touchY = e2.getY();
@@ -710,11 +947,13 @@ public class PageViewer extends View
     		touchX = pts[0];
     		touchY = pts[1];
     		
-    		if (currentToolType == MainActivity.ToolType.Line)
+    		if (currentToolType == MainActivity.ToolType.Line ||
+    			currentToolType == MainActivity.ToolType.Box ||
+    	        currentToolType == MainActivity.ToolType.Circle)
     		{
 	        	if (currentPath.size() > 1)
 				{
-					currentPath.remove(currentPath.size() - 1);
+					currentPath.getObjectPath().remove(currentPath.size() - 1);
 				}
     		}
     		
@@ -722,7 +961,7 @@ public class PageViewer extends View
 			
 			if (mainActivity != null)
 			{
-				RectF boundSelRect = CutObject.getComputeBounds(currentPath);
+				RectF boundSelRect = CutObject.getComputeBounds(currentPath.getObjectPath());
 				
 				mainActivity.setSelObjectCoor(boundSelRect);
 			}
@@ -781,11 +1020,11 @@ public class PageViewer extends View
 			rulerVer.setOffset(offsetPoint.y);
 			rulerHor.setOffset(offsetPoint.x);
 			
-			rulerVer.invalidate();
-			rulerHor.invalidate();
-			
 			RecalcSize();
 			DrawBitmap();
+			
+			rulerVer.invalidate();
+			rulerHor.invalidate();
 		}
 		else
 		if (currentToolType == MainActivity.ToolType.Resize)
@@ -916,7 +1155,6 @@ public class PageViewer extends View
 
     @Override
     public boolean onSingleTapUp(MotionEvent event) {
-        Log.d("PageViewer", "onSingleTapUp: " + event.toString());
         
         CutObject.CutObjectType currentObjectType = CutObject.CutObjectType.Line;
         
@@ -939,7 +1177,7 @@ public class PageViewer extends View
 				reDraw = true;
 			}
 			
-			currentPath.clear();
+			currentPath.getObjectPath().clear();
 			boundSelRect = null;
 			selPathIndex = -1;
 			
@@ -948,38 +1186,56 @@ public class PageViewer extends View
 				{
 					ArrayList<PointF> path = listPath.get(i).getObjectPath();
 					
-					RectF bounds = listPath.get(i).getComputeBounds();
+					RectF boundRect = listPath.get(i).getComputeBounds();
+					RectF boundTempRect = new RectF(boundRect);
 					
-					bounds.left = bounds.left - 10;
-					bounds.top = bounds.top - 10;
-					bounds.right = bounds.right + 10;
-					bounds.bottom = bounds.bottom + 10;
+					boundTempRect.left = boundTempRect.left - marginPress;
+					boundTempRect.top = boundTempRect.top - marginPress;
+					boundTempRect.right = boundTempRect.right + marginPress;
+					boundTempRect.bottom = boundTempRect.bottom + marginPress;
 					
-					if (bounds.contains(touchX, touchY) == true)
+					if (boundTempRect.contains(touchX, touchY) == true)
 					{
-						for(int j = 1; j < path.size(); j++)
+						if (listPath.get(i).getType() == CutObject.CutObjectType.Box ||
+							listPath.get(i).getType() == CutObject.CutObjectType.Circle)
 						{
-							PointF lineStaPt = path.get(j - 1);
-							PointF lineEndPt = path.get(j);
-							PointF p = new PointF(touchX, touchY);
+							boundSelRect = new RectF(boundRect);
 							
-							double disMin = segmentDistToPoint(lineStaPt, lineEndPt, p);
+							selPathIndex = i;
 							
-							if (disMin < 10)
+							if (mainActivity != null)
 							{
-								boundSelRect = new RectF(bounds.left + 10, bounds.top + 10,
-										bounds.right - 10, bounds.bottom - 10);
+								mainActivity.setSelObjectCoor(boundSelRect);
+							}
+							
+							DrawBitmap();
+							invalidate();
+						}
+						else
+						{
+							for(int j = 1; j < path.size(); j++)
+							{
+								PointF lineStaPt = path.get(j - 1);
+								PointF lineEndPt = path.get(j);
+								PointF p = new PointF(touchX, touchY);
 								
-								selPathIndex = i;
+								double disMin = segmentDistToPoint(lineStaPt, lineEndPt, p);
 								
-								if (mainActivity != null)
+								if (disMin < marginPress)
 								{
-									mainActivity.setSelObjectCoor(boundSelRect);
+									boundSelRect = new RectF(boundRect);
+									
+									selPathIndex = i;
+									
+									if (mainActivity != null)
+									{
+										mainActivity.setSelObjectCoor(boundSelRect);
+									}
+									
+									DrawBitmap();
+									invalidate();
+									break;
 								}
-								
-								DrawBitmap();
-								invalidate();
-								break;
 							}
 						}
 					}
@@ -1011,15 +1267,15 @@ public class PageViewer extends View
 				{
 					if (currentPath.size() > 1)
 					{
-						currentPath.remove(currentPath.size() - 1);
+						currentPath.getObjectPath().remove(currentPath.size() - 1);
 					}
 					
 					currentPath.add(new PointF(touchX, touchY));
 					currentObjectType = CutObject.CutObjectType.Line;
 				}
 			
-			listPath.add(new CutObject((ArrayList<PointF>)currentPath.clone(), currentObjectType));
-			currentPath.clear();
+			listPath.add(new CutObject((ArrayList<PointF>)currentPath.getObjectPath().clone(), currentObjectType));
+			currentPath.getObjectPath().clear();
 			
 			DrawBitmap();
 		}
@@ -1032,7 +1288,6 @@ public class PageViewer extends View
 
     @Override
     public boolean onDoubleTap(MotionEvent event) {
-        Log.d("PageViewer", "onDoubleTap: " + event.toString());
         
         if (currentToolType == MainActivity.ToolType.Hand)
         {
@@ -1070,6 +1325,5 @@ public class PageViewer extends View
         Log.d("PageViewer", "onSingleTapConfirmed: " + event.toString());
         return true;
     }
-
 }
 

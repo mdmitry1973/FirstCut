@@ -7,32 +7,70 @@ import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.RectF;
+import android.graphics.Typeface;
 
 public class CutObject {
 	
 	enum CutObjectType {
 		Line,
 		Pen,
-		Box
+		Box,
+		Circle,
+		Text
 	};
 
 	private ArrayList<PointF> listPath;
 	private CutObjectType type;
 	private Matrix matrixPath;
 	
+	private String strText = "";
+	private Typeface stringTypeFace = null;
+	private float stringSize = 20;
+	
 	public CutObject()
 	{
 		type = CutObjectType.Line;
 		matrixPath = new Matrix();
+		listPath = new ArrayList<PointF>();
 	}
 	
 	public CutObject(ArrayList<PointF> path, CutObjectType type)
 	{
-		listPath = path;
+		listPath = new ArrayList<PointF>(path);
 		this.type = type;
 		matrixPath = new Matrix();
 		
 		close();
+	}
+	
+	public void setText(String strText)
+	{
+		this.strText = strText;
+	}
+	
+	public String getText()
+	{
+		return strText;
+	}
+	
+	public void setTypeface(Typeface stringTypeFace)
+	{
+		this.stringTypeFace = stringTypeFace;
+	}
+	
+	public Typeface getTypeface()
+	{
+		return stringTypeFace;
+	}
+	
+	public void setStringSize(float stringSize)
+	{
+		this.stringSize = stringSize;
+	}
+	
+	public float getStringSize()
+	{
+		return stringSize;
 	}
 	
 	public static RectF getComputeBounds(ArrayList<PointF> points)
@@ -121,7 +159,7 @@ public class CutObject {
 	
 	public void add(ArrayList<PointF> path, CutObjectType type)
 	{
-		listPath = path;
+		listPath = new ArrayList<PointF>(path);
 		this.type = type;
 	}
 	

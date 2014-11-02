@@ -20,12 +20,37 @@
             android:layout_height="wrap_content"
             android:src="@drawable/pen" />
         
+        
+         <ImageButton
+            android:id="@+id/imageButtonBox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/box" />
+
+        <ImageButton
+            android:id="@+id/imageButtonCircle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/circle" />
+        
+          <ImageButton
+            android:id="@+id/imageButtonText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/text" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+
         <ImageButton
             android:id="@+id/imageButtonHand"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:src="@drawable/move" />
-        
+
         <ImageButton
             android:id="@+id/imageButtonResize"
             android:layout_width="wrap_content"
