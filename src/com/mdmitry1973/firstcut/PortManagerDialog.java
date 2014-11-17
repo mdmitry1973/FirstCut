@@ -1,6 +1,7 @@
 package com.mdmitry1973.firstcut;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import android.app.AlertDialog;
@@ -9,6 +10,8 @@ import android.app.DialogFragment;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
+import android.hardware.usb.UsbDevice;
+import android.hardware.usb.UsbManager;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -23,6 +26,7 @@ import android.widget.SpinnerAdapter;
 public class PortManagerDialog extends Dialog implements OnClickListener, DialogInterface.OnDismissListener{
 	
 	private Spinner s;
+	private PortManagerDialog portManagerDialog;
 	
 	/*
 	@Override
@@ -56,9 +60,22 @@ public class PortManagerDialog extends Dialog implements OnClickListener, Dialog
 	}
 	*/
 	
+	private PortManagerInterface mFinishInterface;
+	
+	public interface PortManagerInterface {
+
+		public void onPortManagerFinish();
+	}
+	
+	public void setPortManagerInterface(PortManagerInterface finishInterface)
+	{
+		mFinishInterface = finishInterface;
+	}
 
 	public PortManagerDialog(Context context) {
 		super(context);
+		
+		portManagerDialog = this;
 		
 		setContentView(R.layout.port_manager);
 		setTitle(R.string.PortManager);
@@ -104,10 +121,17 @@ public class PortManagerDialog extends Dialog implements OnClickListener, Dialog
 		   	    
 		   	    if (arr.length > 2)
 		   	    {
-			   	    arrLines.add(arr[0]);
+		   	    	String name = arr[0];
+		   	    	
+		   	    	if (name.startsWith("TYPE_") == true)
+	   			   	{
+		   	    		name = arr[1];
+	   			   	}
+		   	    	
+		   	    	arrLines.add(name);
 			   	    
 			   	    if (currentName.length() > 0 && 
-			   	    	arr[0].contains(currentName) == true)
+			   	    	name.contains(currentName) == true)
 			   	    {
 			   	    	sel = arrLines.size() - 1;
 			   	    }
@@ -171,9 +195,16 @@ public class PortManagerDialog extends Dialog implements OnClickListener, Dialog
 			   	    
 			   	    if (arr.length > 2)
 			   	    {
-			   	    	arrLines.add(arr[0]);
+			   	    	String name = arr[0];
+			   	    	
+			   	    	if (name.startsWith("TYPE_") == true)
+		   			   	{
+			   	    		name = arr[1];
+		   			   	}
+			   	    	
+			   	    	arrLines.add(name);
 			   	    
-			   	    	if (arr[0].contains(currentName) == false)
+			   	    	if (name.contains(currentName) == false)
 			   	    	{
 			   	    		arrLines.add(strLine);
 			   	    	}
@@ -200,9 +231,6 @@ public class PortManagerDialog extends Dialog implements OnClickListener, Dialog
 	   	
 	   	int sel = s.getSelectedItemPosition();
 	   	 
-	   	PortSettingsDialog dialog = new PortSettingsDialog(getContext());
-   		dialog.setOnDismissListener(this);
-   		
    		if (sel != -1)
    		{
    			SpinnerAdapter adp = s.getAdapter();
@@ -210,8 +238,8 @@ public class PortManagerDialog extends Dialog implements OnClickListener, Dialog
    			
    			SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getContext());
    		   	String strPorts = sharedPrefs.getString("Ports", "");
-   		   	String portNumner = "";
-   		   	String portIP = "";
+   		   	String line = "";
+   		   	String portType = "TYPE_TCPIP";
    		   	
    		   	if (!strPorts.isEmpty())
    		   	{
@@ -222,22 +250,45 @@ public class PortManagerDialog extends Dialog implements OnClickListener, Dialog
    			   	    
    			   	    if (arr.length > 2)
    			   	    {
-	   			   	    if (currentName.length() > 0 && 
-	   			   	    	arr[0].contains(currentName) == true)
+   			   	    	String strName = "";
+		   			   	  
+   			   	    	if (arr[0].startsWith("TYPE_") == true)
+		   			   	{
+   			   	    		strName = arr[1];
+   			   	    		portType = arr[0];
+		   			   	}
+   			   	    	else
+   			   	    	{
+   			   	    		strName = arr[0];
+   			   	    	}
+	   			   	    
+	   			   	    if (strName.contains(currentName) == true)
 	   			   	    {
-	   			   	    	portNumner =  arr[1];
-	   			   	    	portIP =  arr[2];
+	   			   	    	line = strLine;
 	   			   	    	break;
 	   			   	    }
    			   	    }
    			   	}
    		   	}
-   			
-   		   	if (!portNumner.isEmpty())
-   		   		dialog.setDefaultSettings(currentName, portNumner, portIP);
+   		   	
+   		   	if (line.length() > 0)
+	 		{
+	 			if (portType.contains("TYPE_USB") == true)
+			   	{
+	 				  USBPortSettingsDialog dialogUSB = new USBPortSettingsDialog(portManagerDialog.getContext());
+	            	  dialogUSB.setOnDismissListener(portManagerDialog);
+	            	  dialogUSB.setDefaultSettings(line);
+	            	  dialogUSB.show();
+			   	}
+	 			else
+				{
+	 				PortSettingsDialog dialog = new PortSettingsDialog(getContext());
+	 		   		dialog.setOnDismissListener(this);
+	 		   		dialog.setDefaultSettings(line);
+	 		   		dialog.show();
+				}
+	 		}
    		}
-   		
-		dialog.show();
     }
 	
 	public void onSearch(View v) {
@@ -251,10 +302,37 @@ public class PortManagerDialog extends Dialog implements OnClickListener, Dialog
 	}
 	
 	public void onManualAdd(View v) {
-	   	
-	   	PortSettingsDialog dialog = new PortSettingsDialog(getContext());
-   		dialog.setOnDismissListener(this);
-		dialog.show();
+		
+		UsbManager manager = (UsbManager) getContext().getSystemService(Context.USB_SERVICE);
+		HashMap<String, UsbDevice> deviceList = manager.getDeviceList();
+		
+		if (deviceList.size() > 0)//maybe should be 1, 0 only for test
+		{
+			AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+		    builder.setTitle(R.string.ChoosePortType)
+		           .setItems(R.array.listPortTypes, new DialogInterface.OnClickListener() {
+		               public void onClick(DialogInterface dialog, int which) {
+		               if (which == 1)//usb
+		               {
+		            	   USBPortSettingsDialog dialogUSB = new USBPortSettingsDialog(portManagerDialog.getContext());
+		            	   dialogUSB.setOnDismissListener(portManagerDialog);
+		            	   dialogUSB.show();
+		               }
+		               else
+		               {
+		            	   	PortSettingsDialog dialogTCP = new PortSettingsDialog(portManagerDialog.getContext());
+		            	   	dialogTCP.setOnDismissListener(portManagerDialog);
+		            	   	dialogTCP.show();
+		               }
+		           }
+		    }).show();
+		}
+		else
+		{
+			PortSettingsDialog dialog = new PortSettingsDialog(getContext());
+   			dialog.setOnDismissListener(this);
+   			dialog.show();
+		}
     }
 	
 	public void onCancel(View v) {
@@ -280,7 +358,12 @@ public class PortManagerDialog extends Dialog implements OnClickListener, Dialog
 	    	editor.putString("currentPort", currentName);
 			editor.commit();
 		}
-	   	 
+	   	
+		if (mFinishInterface != null)
+		{
+			mFinishInterface.onPortManagerFinish();
+		}
+		
 	   	dismiss();
     }
 }

@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringReader;
@@ -16,6 +17,8 @@ import java.io.Writer;
 import java.net.Socket;
 import java.nio.charset.CharsetEncoder;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -38,10 +41,13 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.graphics.Path;
@@ -49,6 +55,12 @@ import android.graphics.PathMeasure;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
+import android.hardware.usb.UsbAccessory;
+import android.hardware.usb.UsbDevice;
+import android.hardware.usb.UsbDeviceConnection;
+import android.hardware.usb.UsbEndpoint;
+import android.hardware.usb.UsbInterface;
+import android.hardware.usb.UsbManager;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -66,9 +78,12 @@ public class MainActivity extends Activity
 		implements 	DialogInterface.OnDismissListener, 
 					ToolsDialogInterface, 
 					SendDialoginterface, 
-					PaperManagerDialog.PaperManagerDialogInterface  {
+					PaperManagerDialog.PaperManagerDialogInterface,
+					PortManagerDialog.PortManagerInterface {
 	
 	public ProgressDialog progressDialog;
+	
+	private static final String ACTION_USB_PERMISSION = "com.android.example.USB_PERMISSION";
 	
 	PageViewer pageViewer;
 	RulerViewer rulerVer;
@@ -133,6 +148,10 @@ public class MainActivity extends Activity
 	    	>
 	 	</item>
 	 </Devices>
+	 
+	 Port format {type,name,...}
+	 PORT_USB,Name,Data\n
+	 PORT_TCPIP,Name,Port,IP\n
 	 */
 	
 	@Override
@@ -308,48 +327,23 @@ public class MainActivity extends Activity
 	@Override
 	public void onDismiss(DialogInterface dialogInterface)
 	{
-		SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
-	   	
-	   	if (sharedPrefs.contains("Ports"))
-	   	{
-	   		SendDialod  dialog = new SendDialod(this);
-	   		dialog.setSendDialoginterface(this);
-			dialog.show();
-	   	}
+		
 	}
 	
-	 private class SendDataTask extends AsyncTask<String, Void, Boolean> 
+	 private abstract class SendDataTask extends AsyncTask<String, Void, Boolean>
 	 {
-	        
-	 	public String strName;
-	 	public String strPortNumber;
-	 	public String strTextIP;
-	 	public ArrayList<CutObject> objects;
-	 	 
-	 	public SendDataTask(String strName,
-	 						String strPortNumber,
-	 						String strTextIP,
-	 						ArrayList<CutObject> objects) 
-	 	{
-	 		this.strName = strName;
-	 		this.strPortNumber = strPortNumber;
-	 		this.strTextIP = strTextIP;
-	 		this.objects = objects;
-	 	}
-	 
-	 	@Override
-        protected Boolean doInBackground(String... urls) {
-              
-  			try {
-  				Socket socket = null;
-  				OutputStream outpu;
-  				InputStream input;
-  				double xdpi = getResources().getDisplayMetrics().xdpi;
+		public ArrayList<CutObject> objects = null;
+		
+		public Boolean send()
+		{
+			try {
+				
+				double xdpi = getResources().getDisplayMetrics().xdpi;
 		    	double ydpi = getResources().getDisplayMetrics().ydpi;
 		    	SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(m_activity);
 		    	String resolution = "1016";
 		    	String absoluteCommand="PA";
-    			String relativeCommand="PR";
+				String relativeCommand="PR";
 				String upCommand="PU";
 				String downCommand="PD";
 				String initCommand="IN;";
@@ -385,6 +379,200 @@ public class MainActivity extends Activity
 			   	}
 			   	
 			   	int res = Integer.parseInt(resolution);
+				
+				String data = initCommand + absoluteCommand + separator;
+					
+				for (int j = 0; j < objects.size(); j++) 
+				{
+					CutObject path = objects.get(j);
+					
+					if (path.getType() == CutObject.CutObjectType.Box)
+					{
+						ArrayList<PointF> points = path.getObjectPath();
+						
+						if (points.size() == 2)
+						{
+							PointF p1 = new PointF(points.get(0).x, points.get(0).y);
+							PointF p3 = new PointF(points.get(1).x, points.get(1).y);
+							
+							PointF p2 = new PointF(points.get(1).x, points.get(0).y);
+							PointF p4 = new PointF(points.get(0).x, points.get(1).y);
+							
+							data += String.format("PA;PU%d,%d;PD%d,%d,%d,%d,%d,%d,%d,%d,%d,%d;", 
+									(int)(p1.x/xdpi*res), (int)(p1.y/ydpi*res),
+									(int)(p1.x/xdpi*res), (int)(p1.y/ydpi*res),
+									(int)(p2.x/xdpi*res), (int)(p2.y/ydpi*res),
+									(int)(p3.x/xdpi*res), (int)(p3.y/ydpi*res),
+									(int)(p4.x/xdpi*res), (int)(p4.y/ydpi*res),
+									(int)(p1.x/xdpi*res), (int)(p1.y/ydpi*res)
+									);
+						}
+					}
+					else
+					if (path.getType() == CutObject.CutObjectType.Circle)
+					{
+						ArrayList<PointF> points = path.getObjectPath();
+						
+						if (points.size() == 2)
+						{
+							PointF p1 = new PointF(points.get(0).x, points.get(0).y);
+							PointF p2 = new PointF(points.get(1).x, points.get(1).y);
+							Path pathCircle = new Path();
+							RectF rectCircle = new RectF((float)(p1.x/xdpi*res), (float)(p1.y/xdpi*res), 
+													(float)(p2.x/ydpi*res), (float)(p2.y/ydpi*res));
+							
+							rectCircle.sort();
+							
+							pathCircle.addOval(rectCircle, Path.Direction.CCW);
+							pathCircle.close();
+							
+							PathMeasure pathMeasure = new PathMeasure(pathCircle, false);
+							ArrayList<PointF> outputPoints = new ArrayList<PointF>();
+							PointF prePoint = new PointF(0, 0);
+							
+							for (float distance = 0; distance < pathMeasure.getLength(); distance++) 
+							{
+								float[] pos = new float[2];
+								float[] tan = new float[2];
+								
+								if (pathMeasure.getPosTan(distance, pos, tan))
+								{
+									PointF newPoint = new PointF(pos[0], pos[1]);
+									
+									if (distance == 0)
+									{
+										prePoint = new PointF(newPoint.x, newPoint.y);
+										outputPoints.add(newPoint);
+									}
+									else
+									{
+										if (Math.abs(newPoint.x - prePoint.x) > 1.0f ||
+											Math.abs(newPoint.y - prePoint.y) > 1.0f ||
+											distance == pathMeasure.getLength() - 1)
+										{
+											prePoint = new PointF(newPoint.x, newPoint.y);
+											outputPoints.add(newPoint);
+										}
+									}
+								}
+							}
+							
+							for(int n = 0; n < outputPoints.size(); n++)
+							{
+								if (n == 0)
+								{
+									data += String.format("PA;PU%d,%d;PD%d,%d", 
+											(int)outputPoints.get(n).x, (int)outputPoints.get(n).y,
+											(int)outputPoints.get(n).x, (int)outputPoints.get(n).y);
+								}
+								else
+								{
+									data += String.format(",%d,%d", 
+											(int)outputPoints.get(n).x, (int)outputPoints.get(n).y);
+								}
+							}
+							data += separator;
+						}
+					}
+					else
+					{
+						for (int i = 0; i < path.size(); i++) 
+						{
+							PointF point = path.get(i);
+							
+							double x = point.x/xdpi;
+							double y = point.y/ydpi;
+							
+							x = x*res;
+							y = y*res;
+							
+							if (i == 0)
+							{
+								data += String.format("%s%d,%d%s", upCommand, (int)y, (int)x, separator);
+								data += String.format(downCommand);
+							}
+						   
+							data += String.format("%d,%d,", (int)y, (int)x);
+						}
+						
+						data = data.substring(0, data.length() - 1);
+						data += separator;
+					}
+			   
+					data += String.format(upCommand + separator);
+				}
+				
+				sendDataToPort(data.getBytes());
+				closePort();
+			
+			} catch (Exception e) {
+	  	            //return e.toString();
+	  	        	Log.v("MainActivity", "Error" + e);
+	  	    } finally {
+	  	           
+	  	           
+	  	    }
+			
+			return true;
+		}
+
+		@Override
+		protected Boolean doInBackground(String... params) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+		
+		abstract void sendDataToPort(byte[] data);
+		abstract void closePort();
+	 }
+	
+	 private class SendDataTaskIPTCP extends SendDataTask//AsyncTask<String, Void, Boolean> implements  SendDataTask
+	 {
+		public OutputStream outpu = null;
+		public InputStream input = null;
+	 	public String strName;
+	 	public String strPortNumber;
+	 	public String strTextIP;
+	 	
+	 	public SendDataTaskIPTCP(String strName,
+	 						String strPortNumber,
+	 						String strTextIP,
+	 						ArrayList<CutObject> objects) 
+	 	{
+	 		this.strName = strName;
+	 		this.strPortNumber = strPortNumber;
+	 		this.strTextIP = strTextIP;
+	 		this.objects = objects;
+	 	}
+	 	
+	 	@Override
+	 	public void sendDataToPort(byte[] data)
+	 	{
+	 		try {
+				outpu.write(data);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+	 	}
+	 	
+	 	@Override
+	 	public void closePort()
+	 	{
+	 		try {
+				outpu.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+	 	}
+	 
+	 	@Override
+        protected Boolean doInBackground(String... urls) {
+              
+  			try {
+  				Socket socket = null;
+  				
   				
   				if (bEnableFilePort == true)
   				{
@@ -400,130 +588,7 @@ public class MainActivity extends Activity
   	  				input =	socket.getInputStream();
   				}
   				
-  				String data = initCommand + absoluteCommand + separator;
-  				
-  				for (int j = 0; j < objects.size(); j++) 
-  				{
-  					CutObject path = objects.get(j);
-  					
-  					if (path.getType() == CutObject.CutObjectType.Box)
-  					{
-  						ArrayList<PointF> points = path.getObjectPath();
-  						
-  						if (points.size() == 2)
-  						{
-  							PointF p1 = new PointF(points.get(0).x, points.get(0).y);
-  							PointF p3 = new PointF(points.get(1).x, points.get(1).y);
-  							
-  							PointF p2 = new PointF(points.get(1).x, points.get(0).y);
-  							PointF p4 = new PointF(points.get(0).x, points.get(1).y);
-  							
-  							data += String.format("PA;PU%d,%d;PD%d,%d,%d,%d,%d,%d,%d,%d,%d,%d;", 
-  									(int)(p1.x/xdpi*res), (int)(p1.y/ydpi*res),
-  									(int)(p1.x/xdpi*res), (int)(p1.y/ydpi*res),
-  									(int)(p2.x/xdpi*res), (int)(p2.y/ydpi*res),
-  									(int)(p3.x/xdpi*res), (int)(p3.y/ydpi*res),
-  									(int)(p4.x/xdpi*res), (int)(p4.y/ydpi*res),
-  									(int)(p1.x/xdpi*res), (int)(p1.y/ydpi*res)
-  									);
-  						}
-  					}
-  					else
-  					if (path.getType() == CutObject.CutObjectType.Circle)
-  					{
-  						ArrayList<PointF> points = path.getObjectPath();
-  						
-  						if (points.size() == 2)
-  						{
-  							PointF p1 = new PointF(points.get(0).x, points.get(0).y);
-  							PointF p2 = new PointF(points.get(1).x, points.get(1).y);
-  							Path pathCircle = new Path();
-  							RectF rectCircle = new RectF((float)(p1.x/xdpi*res), (float)(p1.y/xdpi*res), 
-  													(float)(p2.x/ydpi*res), (float)(p2.y/ydpi*res));
-  							
-  							rectCircle.sort();
-  							
-  							pathCircle.addOval(rectCircle, Path.Direction.CCW);
-  							pathCircle.close();
-  							
-  							PathMeasure pathMeasure = new PathMeasure(pathCircle, false);
-  							ArrayList<PointF> outputPoints = new ArrayList<PointF>();
-  							PointF prePoint = new PointF(0, 0);
-  							
-  							for (float distance = 0; distance < pathMeasure.getLength(); distance++) 
-  							{
-  								float[] pos = new float[2];
-  								float[] tan = new float[2];
-  								
-  								if (pathMeasure.getPosTan(distance, pos, tan))
-  								{
-  									PointF newPoint = new PointF(pos[0], pos[1]);
-  									
-  									if (distance == 0)
-  									{
-  										prePoint = new PointF(newPoint.x, newPoint.y);
-  										outputPoints.add(newPoint);
-  									}
-  									else
-  									{
-  										if (Math.abs(newPoint.x - prePoint.x) > 1.0f ||
-  											Math.abs(newPoint.y - prePoint.y) > 1.0f ||
-  											distance == pathMeasure.getLength() - 1)
-  										{
-  											prePoint = new PointF(newPoint.x, newPoint.y);
-  											outputPoints.add(newPoint);
-  										}
-  									}
-  								}
-  							}
-  							
-  							for(int n = 0; n < outputPoints.size(); n++)
-  							{
-  								if (n == 0)
-  								{
-  									data += String.format("PA;PU%d,%d;PD%d,%d", 
-  											(int)outputPoints.get(n).x, (int)outputPoints.get(n).y,
-  											(int)outputPoints.get(n).x, (int)outputPoints.get(n).y);
-  								}
-  								else
-  								{
-  									data += String.format(",%d,%d", 
-  											(int)outputPoints.get(n).x, (int)outputPoints.get(n).y);
-  								}
-  							}
-  							data += separator;
-  						}
-  					}
-  					else
-  					{
-	  					for (int i = 0; i < path.size(); i++) 
-	  					{
-	  						PointF point = path.get(i);
-	  						
-	  						double x = point.x/xdpi;
-	  						double y = point.y/ydpi;
-	  						
-	  						x = x*res;
-	  						y = y*res;
-	  						
-	  						if (i == 0)
-	  						{
-	  							data += String.format("%s%d,%d%s", upCommand, (int)y, (int)x, separator);
-	  							data += String.format(downCommand);
-	  						}
-						   
-	  						data += String.format("%d,%d,", (int)y, (int)x);
-	  					}
-	  					
-	  					data = data.substring(0, data.length() - 1);
-	  					data += separator;
-  					}
-				   
-  					data += String.format(upCommand + separator);
-				}
-  				
-  				outpu.write(data.getBytes());
-  				outpu.close();
+  				send();
   				
   				if (socket != null)
   				{
@@ -549,24 +614,104 @@ public class MainActivity extends Activity
        }
 	}
 	 
+	 private class SendDataTaskUSB extends SendDataTask
+	 {
+	 	public UsbDevice device;
+	 	UsbInterface intf = null;
+    	UsbEndpoint endpoint = null;
+    	UsbDeviceConnection connection = null;
+    	boolean forceClaim = true;
+	 	
+	 	public SendDataTaskUSB(UsbDevice device,
+	 						ArrayList<CutObject> objects) 
+	 	{
+	 		this.device = device;
+	 		this.objects = objects;
+	 	}
+	 	
+	 	@Override
+	 	public void sendDataToPort(byte[] data)
+	 	{
+	 		int TIMEOUT = 1000;
+	 		
+	 		int res = connection.bulkTransfer(endpoint, data, data.length, TIMEOUT);
+	 	}
+	 	
+	 	@Override
+	 	public void closePort()
+	 	{
+	 		connection.releaseInterface(intf);
+			connection.close();
+	 	}
+	 
+	 	@Override
+        protected Boolean doInBackground(String... urls) {
+              
+  			try {
+  				
+  				UsbManager manager = (UsbManager) getSystemService(Context.USB_SERVICE);
+  				
+  				if (bEnableFilePort == true)
+  				{
+  					//File tripDataFile = new File(getExternalCacheDir(), "test_output.txt");
+  					
+  					//outpu = new BufferedOutputStream(new FileOutputStream(tripDataFile));
+  				}
+  				else
+  				{
+  					intf = device.getInterface(0);
+    		    	endpoint = intf.getEndpoint(0);
+    		    	connection = manager.openDevice(device); 
+    		    	connection.claimInterface(intf, forceClaim);
+  				}
+  				
+  				send();
+  	            
+  	        } catch (Exception e) {
+  	            //return e.toString();
+  	        	Log.v("MainActivity", "Error" + e);
+  	        } finally {
+  	           
+  	           
+  	        }
+        	
+        	return true;
+        }
+	 	
+        // onPostExecute displays the results of the AsyncTask.
+        @Override
+        protected void onPostExecute(Boolean result) {
+        	progressDialog.dismiss();
+        	
+       }
+	}
+	 
 	public void OnSendDialog()
 	{
-		ConnectivityManager connMgr = (ConnectivityManager) 
-		getSystemService(Context.CONNECTIVITY_SERVICE);
-		NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
-				
-		if (networkInfo != null && networkInfo.isConnected()) 
-		{
-			sendData();
-		}
-		else
-		{
-			AlertDialog.Builder builder = new AlertDialog.Builder(this);
-	    	builder.setMessage(R.string.no_network).setTitle(R.string.app_name).setPositiveButton("Ok", null);
-	    	AlertDialog dialog = builder.create();
-	    	dialog.show();
-		}
+		sendData();
 	}
+	
+	private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
+
+	    public void onReceive(Context context, Intent intent) {
+	        String action = intent.getAction();
+	        if (ACTION_USB_PERMISSION.equals(action)) {
+	            synchronized (this) {
+	                UsbDevice device = (UsbDevice)intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+
+	                if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+	                    if(device != null){
+	                    	
+	                    	new SendDataTaskUSB(device, pageViewer.getObjects()).execute("");
+	                   }
+	                } 
+	                else {
+	                    Log.d("MainActivity", "permission denied for device " + device);
+	                }
+	            }
+	        }
+	    }
+	};
 	
 	public void sendData()
 	{
@@ -585,8 +730,14 @@ public class MainActivity extends Activity
 	   		for (String strLine : arrPortLines) 
 	   		{
 		   	    String []arr = strLine.split(",");
+		   	    String strName = arr[0];
 		   	    
-		   	    if (strCurrent.length() > 0 && arr[0].compareTo(strCurrent) == 0)
+		   	    if (strName.startsWith("TYPE_") == true)
+			   	{
+		   	    	strName = arr[1];
+			   	}
+		   	    
+		   	    if (strCurrent.length() > 0 && strName.compareTo(strCurrent) == 0)
 		   	    {
 		   	    	strCurrentLine = strLine;
 		   	    	break;
@@ -600,19 +751,77 @@ public class MainActivity extends Activity
 	   		
 	   		if (arr.length > 2)
 	   		{
+	   			String strType = "TYPE_TCPIP";
 	   			String strName = arr[0];
-	   			String strPortNumber = arr[1];
-	   			String strTextIP = arr[2];
+	   			int offset = 0;
 	   			
-	   			progressDialog = new ProgressDialog(this);
-	   			progressDialog.setTitle(getResources().getString(R.string.sending_data));
-	   			progressDialog.setMessage(getResources().getString(R.string.please_wait));
-	   			progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-	   			progressDialog.setCanceledOnTouchOutside(false);
-	   			progressDialog.show();
-	   				
-	   		    new SendDataTask(strName, strPortNumber, strTextIP, pageViewer.getObjects()).execute("");
-	   		
+		   	    if (strName.startsWith("TYPE_") == true)
+			   	{
+		   	    	strType = arr[0];
+		   	    	strName = arr[1];
+		   	    	offset++;
+			   	}
+	   			
+		   	    if (strType.startsWith("TYPE_TCPIP") == true)
+		   	    {
+		   	    	ConnectivityManager connMgr = (ConnectivityManager) 
+   	    			getSystemService(Context.CONNECTIVITY_SERVICE);
+   	    			NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+   	    					
+   	    			if (networkInfo != null && networkInfo.isConnected()) 
+   	    			{
+   	    				String strPortNumber = arr[1 + offset];
+   			   			String strTextIP = arr[2 + offset];
+   			   			
+   			   	    	progressDialog = new ProgressDialog(this);
+   		   				progressDialog.setTitle(getResources().getString(R.string.sending_data));
+   		   				progressDialog.setMessage(getResources().getString(R.string.please_wait));
+   		   				progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+   		   				progressDialog.setCanceledOnTouchOutside(false);
+   		   				progressDialog.show();
+   		   				
+   		   		    	new SendDataTaskIPTCP(strName, strPortNumber, strTextIP, pageViewer.getObjects()).execute("");
+   			   	    
+   	    			}
+   	    			else
+   	    			{
+   	    				AlertDialog.Builder builder = new AlertDialog.Builder(this);
+   	    		    	builder.setMessage(R.string.no_network).setTitle(R.string.app_name).setPositiveButton("Ok", null);
+   	    		    	AlertDialog dialog = builder.create();
+   	    		    	dialog.show();
+   	    			}
+		   	    }
+		   	    else
+		   	    if (strType.startsWith("TYPE_USB") == true)
+		   	    {
+		   	    	String strUSBPortData = arr[1 + offset];
+		   	    	
+		   	    	UsbManager manager = (UsbManager) getSystemService(Context.USB_SERVICE);
+	  				
+	  				HashMap<String, UsbDevice> deviceList = manager.getDeviceList();
+	  	    		Iterator<UsbDevice> deviceIterator = deviceList.values().iterator();
+	  	    		while(deviceIterator.hasNext()){
+	  	    		    UsbDevice device = deviceIterator.next();
+	  	    		    
+	  	    		    if (device != null && strUSBPortData.contains(device.getDeviceName()))
+	  	    		    {
+	  	    		    	PendingIntent mPermissionIntent = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), 0);
+	  	    		    	IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
+	  	    		    	registerReceiver(mUsbReceiver, filter);
+
+	  	    		    	manager.requestPermission(device, mPermissionIntent);
+	  	    		    	
+	  	    		    	progressDialog = new ProgressDialog(this);
+	  			   			progressDialog.setTitle(getResources().getString(R.string.sending_data));
+	  			   			progressDialog.setMessage(getResources().getString(R.string.please_wait));
+	  			   			progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+	  			   			progressDialog.setCanceledOnTouchOutside(false);
+	  			   			progressDialog.show();
+	  	    		    	
+	  	    		    	break;
+	  	    		    }
+	  	    		}
+		   	    }
 	   		}
 	   	}
 	}
@@ -631,7 +840,7 @@ public class MainActivity extends Activity
 	   	else
 	   	{
 	   		PortManagerDialog dialog = new PortManagerDialog(this);
-	   		dialog.setOnDismissListener(this);
+	   		dialog.setPortManagerInterface(this);
 			dialog.show();
 	   	}
     }
@@ -1058,6 +1267,18 @@ public class MainActivity extends Activity
 	{
 		pageViewer.ResetPaperSize();
 		pageViewer.RecalcSize();
+	}
+	
+	public void onPortManagerFinish()
+	{
+		SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+	   	
+	   	if (sharedPrefs.contains("Ports"))
+	   	{
+	   		SendDialod  dialog = new SendDialod(this);
+	   		dialog.setSendDialoginterface(this);
+			dialog.show();
+	   	}
 	}
 }
 

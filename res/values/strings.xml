@@ -70,4 +70,9 @@
 	<string name="PaperName">Paper name:</string>
 	<string name="SaveChanges">Save changes</string>
 	<string name="ChangeName">This paper name exist. Please change name.</string>
+	<string name="ChangePortName">This port name exist. Please change name.</string>
+	<string name="TestUSB">TestUSB</string>
+	<string name="ChoosePortType">Choose port type</string>
+	<string name="USBPorts">USB Ports:</string>
+	<string name="NotFindPorts">Not find ports</string>
 </resources>

@@ -72,11 +72,34 @@ public class PortSettingsDialog extends Dialog implements OnClickListener{//Frag
 		((Button)findViewById(R.id.buttonCancel)).setOnClickListener(this);
 	}
 	
-	public void setDefaultSettings(String name, String portNumber, String ip)
+	public void setDefaultSettings(String line)//name, String portNumber, String ip)
 	{
-		editName.setText(name);
-		editTextIP.setText(ip);
-	   	editPortNumber.setText(portNumber);
+		String []arr = line.split(",");
+		
+		if (arr.length > 1)
+		{
+			String strType = arr[0];
+			String strName = "";
+			String strPort = "";
+			String strIP = "";
+			
+			if (strType.startsWith("TYPE_") == true)
+			{
+				strName = arr[1];
+				strPort = arr[2];
+				strIP = arr[3];
+			}
+			else
+			{
+				strName = arr[0];
+				strPort = arr[1];
+				strIP = arr[2];
+			}
+			
+			editName.setText(strName);
+			editTextIP.setText(strIP);
+	   		editPortNumber.setText(strPort);
+		}
 	}
 	
 	public void onClick(View v) {       

@@ -16,8 +16,8 @@
         android:id="@+id/action_paper_manager"
         android:orderInCategory="100"
         android:showAsAction="never"
-        android:title="@string/Paper"/>   
-
+        android:title="@string/Paper"/>  
+        
     <item
         android:id="@+id/action_settings"
         android:orderInCategory="100"

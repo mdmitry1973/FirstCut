@@ -4,5 +4,9 @@
         <item>Inch</item>
         <item>Millimeter</item>
         <item>Centimeter</item>
-    </string-array>      
+    </string-array>    
+    <string-array name="listPortTypes">
+        <item>TCP/IP</item>
+        <item>USB</item>
+    </string-array>   
 </resources>

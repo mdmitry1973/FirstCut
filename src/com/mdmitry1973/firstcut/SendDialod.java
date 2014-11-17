@@ -66,7 +66,14 @@ public class SendDialod  extends Dialog  implements OnClickListener {
 			   	    
 				   	 if (arr.length > 2)
 				   	 {
-				   	    arrLines.add(arr[0]);
+				   		if (arr[0].startsWith("TYPE_") == true)
+		   			   	{
+				   			arrLines.add(arr[1]);
+		   			   	}
+				   		else
+				   		{
+				   			arrLines.add(arr[0]);
+				   		}
 				   	    
 				   	    if (currentName.length() > 0 && 
 				   	    	arr[0].contains(currentName) == true)

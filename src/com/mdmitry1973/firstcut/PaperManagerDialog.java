@@ -26,7 +26,7 @@ public class PaperManagerDialog  extends Dialog implements OnClickListener , Dia
 		public void ResetPaper();
 	}
 	
-	private String currentListPort;
+	private String currentListPaper;
 	
 	private Spinner spinnerPaperList;
 	
@@ -62,7 +62,7 @@ public class PaperManagerDialog  extends Dialog implements OnClickListener , Dia
 		
 		SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getContext());
 		
-		currentListPort = sharedPrefs.getString("Papers", "");
+		currentListPaper = sharedPrefs.getString("Papers", "");
 		    
 		setPaperList();
 		
@@ -88,7 +88,7 @@ public class PaperManagerDialog  extends Dialog implements OnClickListener , Dia
 		SpinnerAdapter adp = spinnerPaperList.getAdapter();
 		int sel = spinnerPaperList.getSelectedItemPosition();
 		
-		String strPapers = currentListPort;
+		String strPapers = currentListPaper;
 	   	List<String> arrLines = new ArrayList<String>();
 	   	
 	   	if (!strPapers.isEmpty())
@@ -124,7 +124,7 @@ public class PaperManagerDialog  extends Dialog implements OnClickListener , Dia
 			sel = sharedPrefs.getInt("currentPaperIndex", 0);
 		}
 		
-	   	String strPapers = currentListPort;
+	   	String strPapers = currentListPaper;
 	   	List<String> arrLines = new ArrayList<String>();
 	   	
 	   	if (!strPapers.isEmpty())
@@ -182,7 +182,7 @@ public class PaperManagerDialog  extends Dialog implements OnClickListener , Dia
    		{
 	   		SpinnerAdapter adp = spinnerPaperList.getAdapter();
    			String currentName = (String)adp.getItem(sel);
-   			String strPapers = currentListPort;
+   			String strPapers = currentListPaper;
    		   	
    		   	if (!strPapers.isEmpty())
 		   	{
@@ -207,7 +207,7 @@ public class PaperManagerDialog  extends Dialog implements OnClickListener , Dia
 			   		strPapers += arrLines.get(i) + "\n";
 			   	}
 			   	
-			   	currentListPort = strPapers;
+			   	currentListPaper = strPapers;
 		   	}
    			
    		   	setPaperList();
@@ -226,7 +226,7 @@ public class PaperManagerDialog  extends Dialog implements OnClickListener , Dia
    		{
 	   		SpinnerAdapter adp = spinnerPaperList.getAdapter();
    			String currentName = (String)adp.getItem(sel);
-   			String strPapers = currentListPort;
+   			String strPapers = currentListPaper;
    		   	
    		   	if (!strPapers.isEmpty())
 		   	{
@@ -255,7 +255,7 @@ public class PaperManagerDialog  extends Dialog implements OnClickListener , Dia
 			   		strPapers += arrLines.get(i) + "\n";
 			   	}
 			   	
-			   	currentListPort = strPapers;
+			   	currentListPaper = strPapers;
 		   	}
    			
    		   	setPaperList();
@@ -266,7 +266,7 @@ public class PaperManagerDialog  extends Dialog implements OnClickListener , Dia
 	
 	public void onAdd(View v) {
 	   	
-		String strPapers = currentListPort;
+		String strPapers = currentListPaper;
 		String name = editName.getText().toString();
 		String strWidth =  editWidth.getText().toString();
 		String strHeight = editHeight.getText().toString();
@@ -297,7 +297,7 @@ public class PaperManagerDialog  extends Dialog implements OnClickListener , Dia
 		
 		strPapers = strPapers + newLine;
 		
-		currentListPort = strPapers;
+		currentListPaper = strPapers;
 		
 		setPaperList();
 		setPaperProperties();
@@ -322,7 +322,7 @@ public class PaperManagerDialog  extends Dialog implements OnClickListener , Dia
 		
 		SharedPreferences.Editor editor = sharedPrefs.edit();
     	editor.putInt("currentPaperIndex", sel);
-    	editor.putString("Papers", currentListPort);
+    	editor.putString("Papers", currentListPaper);
 		editor.commit();
 	   	 
 	   	dismiss();
