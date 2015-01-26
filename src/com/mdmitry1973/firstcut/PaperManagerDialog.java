@@ -58,7 +58,7 @@ public class PaperManagerDialog  extends Dialog implements OnClickListener , Dia
 	    editWidth = ((EditText)findViewById(R.id.editTextWidth));
 	    editHeight = ((EditText)findViewById(R.id.editTextHeight));
 		
-		spinnerPaperList = (Spinner) findViewById(R.id.spinnerPaperList);
+		spinnerPaperList = (Spinner) findViewById(R.id.spinnerFontList);
 		
 		SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getContext());
 		

@@ -60,6 +60,39 @@
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:orientation="vertical" >
+					<ImageButton
+                    android:id="@+id/buttonToolOptions"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/tool_options" />
+
+					<LinearLayout
+					    android:layout_width="match_parent"
+					    android:layout_height="wrap_content" >
+
+						<EditText
+						    android:id="@+id/editTextZoom"
+						    android:layout_width="match_parent"
+						    android:layout_height="wrap_content"
+						    android:layout_weight="1"
+						    android:inputType="number" />
+
+						<TextView
+						    android:id="@+id/textViewZoom"
+						    android:layout_width="wrap_content"
+						    android:layout_height="wrap_content"
+						    android:layout_weight="1"
+						    android:text="@string/Pro"
+						    android:width="20dp" />
+
+					</LinearLayout>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:orientation="vertical" >
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -161,22 +194,6 @@
                 </LinearLayout>
 
             </LinearLayout>
-
-            <TextView
-                android:id="@+id/textViewText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/Text"
-                android:textAppearance="?android:attr/textAppearanceSmall"
-                android:visibility="gone" />
-
-            <EditText
-                android:id="@+id/editTextEnter"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:ems="10"
-                android:visibility="gone" />
 
         </LinearLayout>
 

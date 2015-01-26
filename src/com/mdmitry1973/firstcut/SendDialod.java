@@ -76,7 +76,7 @@ public class SendDialod  extends Dialog  implements OnClickListener {
 				   		}
 				   	    
 				   	    if (currentName.length() > 0 && 
-				   	    	arr[0].contains(currentName) == true)
+				   	    	arrLines.get(arrLines.size() - 1).contains(currentName) == true)
 				   	    {
 				   	    	sel = arrLines.size() - 1;
 				   	    }
@@ -161,7 +161,7 @@ public class SendDialod  extends Dialog  implements OnClickListener {
 		SpinnerAdapter adpPorts = spinnerPorts.getAdapter();
 		String currentPortsName = "";
 		
-		currentPortsName = (String)adpPorts.getItem(curDevice);
+		currentPortsName = (String)adpPorts.getItem(curPort);
 		
 		SpinnerAdapter adpDevices = spinnerDevices.getAdapter();
 		String currentDevicesName = "";

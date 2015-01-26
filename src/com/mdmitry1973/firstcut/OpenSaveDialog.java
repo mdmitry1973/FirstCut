@@ -62,6 +62,15 @@ public class OpenSaveDialog extends Dialog  {
 		
 		Button buttonOK = (Button) findViewById(R.id.buttonOK);
 		
+		if (type == OpenSaveType.Open)
+		{
+			buttonOK.setText(R.string.Open);
+		}
+		else
+		{
+			buttonOK.setText(R.string.Save);
+		}
+		
 		buttonOK.setOnClickListener(new View.OnClickListener() {
 	        @Override
 	        public void onClick(View v) {

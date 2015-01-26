@@ -2,6 +2,7 @@ package com.mdmitry1973.firstcut;
 
 import java.util.ArrayList;
 
+import android.content.SharedPreferences;
 import android.graphics.Matrix;
 import android.graphics.Path;
 import android.graphics.Point;
@@ -9,68 +10,127 @@ import android.graphics.PointF;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 
-public class CutObject {
+public abstract class CutObject {
 	
 	enum CutObjectType {
 		Line,
 		Pen,
 		Box,
 		Circle,
-		Text
+		Star,
+		Arrow,
+		Text;
 	};
 
-	private ArrayList<PointF> listPath;
-	private CutObjectType type;
-	private Matrix matrixPath;
-	
-	private String strText = "";
-	private Typeface stringTypeFace = null;
-	private float stringSize = 20;
+	protected ArrayList<PointF> listPath;
+	protected Path drawPath;
+	protected float degrees;
+	protected Matrix drawMatrix;
 	
 	public CutObject()
 	{
-		type = CutObjectType.Line;
-		matrixPath = new Matrix();
 		listPath = new ArrayList<PointF>();
+		drawPath = new Path();
+		drawMatrix = new Matrix();
+		degrees = 0;
 	}
 	
-	public CutObject(ArrayList<PointF> path, CutObjectType type)
+	public CutObject(ArrayList<PointF> path)
 	{
 		listPath = new ArrayList<PointF>(path);
-		this.type = type;
-		matrixPath = new Matrix();
+		drawPath = new Path();
+		drawMatrix = new Matrix();
+		degrees = 0;
 		
 		close();
 	}
 	
-	public void setText(String strText)
+	public final static CutObject CreateObject(CutObjectType type)
 	{
-		this.strText = strText;
+		CutObject object = null;
+		
+		if (type == CutObjectType.Box)
+		{
+			object = new CutObjectRect();
+		}
+		if (type == CutObjectType.Circle)
+		{
+			object = new CutObjectCircle();
+		}
+		if (type == CutObjectType.Line)
+		{
+			object = new CutObjectLine();
+		}
+		if (type == CutObjectType.Pen)
+		{
+			object = new CutObjectPen();
+		}
+		if (type == CutObjectType.Arrow)
+		{
+			object = new CutObjectArrow();
+		}
+		if (type == CutObjectType.Star)
+		{
+			object = new CutObjectStar();
+		}
+		if (type == CutObjectType.Text)
+		{
+			object = new CutObjectText();
+		}
+		
+		return object;
 	}
 	
-	public String getText()
+	public final static CutObject CreateObject(ArrayList<PointF> path, CutObjectType type)
 	{
-		return strText;
+		CutObject object = null;
+		
+		if (type == CutObjectType.Box)
+		{
+			object = new CutObjectRect(path);
+		}
+		if (type == CutObjectType.Circle)
+		{
+			object = new CutObjectCircle(path);
+		}
+		if (type == CutObjectType.Line)
+		{
+			object = new CutObjectLine(path);
+		}
+		if (type == CutObjectType.Pen)
+		{
+			object = new CutObjectPen(path);
+		}
+		if (type == CutObjectType.Arrow)
+		{
+			object = new CutObjectArrow(path);
+		}
+		if (type == CutObjectType.Star)
+		{
+			object = new CutObjectStar(path);
+		}
+		if (type == CutObjectType.Text)
+		{
+			object = new CutObjectText(path);
+		}
+		
+		return object;
 	}
 	
-	public void setTypeface(Typeface stringTypeFace)
+	public void setCurrentPrefs(SharedPreferences sharedPref)
 	{
-		this.stringTypeFace = stringTypeFace;
+		setDegree(sharedPref.getLong("Rotate", 0));
 	}
 	
-	public Typeface getTypeface()
+	public void setComputeBounds(RectF rect)
 	{
-		return stringTypeFace;
-	}
-	
-	public void setStringSize(float stringSize)
-	{
-		this.stringSize = stringSize;
-	}
-	
-	public float getStringSize()
-	{
-		return stringSize;
+		RectF currentTRect = getComputeBounds();
+		
+		Matrix mt = new Matrix();
+		
+		mt.setRectToRect(currentTRect, rect, Matrix.ScaleToFit.FILL);
+		
+		setMatrix(mt);
 	}
 	
 	public static RectF getComputeBounds(ArrayList<PointF> points)
@@ -118,15 +178,18 @@ public class CutObject {
 		return getComputeBounds(listPath);
 	}
 	
-	public Matrix getMatrix()
+	public float getDegree()
 	{
-		return matrixPath;
+		return degrees;
+	}
+	
+	public void setDegree(float degrees)
+	{
+		this.degrees = degrees;
 	}
 	
 	public void setMatrix(Matrix matrixPath)
 	{
-		this.matrixPath = matrixPath;
-		
 		float[] dist = new float[listPath.size()*2];
 		float[] src = new float[listPath.size()*2];
 		
@@ -152,15 +215,14 @@ public class CutObject {
 		
 	}
 	
-	public void add(ArrayList<PointF> path)
+	public ArrayList<PointF> getListPoints()
 	{
-		listPath = path;
+		return listPath;
 	}
 	
-	public void add(ArrayList<PointF> path, CutObjectType type)
+	public void add(ArrayList<PointF> path)
 	{
 		listPath = new ArrayList<PointF>(path);
-		this.type = type;
 	}
 	
 	public void add(PointF point)
@@ -168,14 +230,9 @@ public class CutObject {
 		listPath.add(point);
 	}
 	
-	public void setType(CutObjectType type)
-	{
-		this.type = type;
-	}
-	
 	public CutObjectType getType()
 	{
-		return type;
+		return CutObjectType.Box;
 	}
 	
 	public int size()
@@ -183,13 +240,24 @@ public class CutObject {
 		return listPath.size();
 	}
 	
-	public ArrayList<PointF> getObjectPath()
+	public void remove(int i)
 	{
-		return listPath;
+		listPath.remove(i);
 	}
+	
 	
 	public PointF get(int i)
 	{
 		return listPath.get(i);
+	}
+	
+	public void clear()
+	{
+		listPath.clear();
+	}
+	
+	public Path getDrawPath()
+	{
+		return drawPath;
 	}
 }

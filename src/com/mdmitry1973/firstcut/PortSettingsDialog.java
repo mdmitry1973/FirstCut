@@ -127,49 +127,59 @@ public class PortSettingsDialog extends Dialog implements OnClickListener{//Frag
 	   	editName = ((EditText)findViewById(R.id.editTextName));
 	    editPortNumber = ((EditText)findViewById(R.id.editTextPortNumber));
 	    editTextIP = ((EditText)findViewById(R.id.editTextIP));
-	   	
-	   	String portSettings = "";
-	   	
-	   	portSettings += editName.getText();
-	   	portSettings += ",";
-	   	portSettings += editPortNumber.getText();
-	   	portSettings += ",";
-	   	portSettings += editTextIP.getText();
-	   	
-	   	SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getContext());
-	   	
-	   	String strPorts = sharedPrefs.getString("Ports", "");
-	   	ArrayList<String> arrLines = new ArrayList<String>();
-	   	
-	   	if (strPorts.length() != 0)
-	   	{
-	   		String []arrPortLines = strPorts.split("\n");
-	   		
-	   		for (String s : arrPortLines) {
-		   	    String []arr = s.split(",");
-		   	    
-		   	    if (arr.length > 2)
-		   	    {
-		   	    	if (arr[0].contains(editName.getText()) == false)
-		   	    	{
-		   	    		arrLines.add(s);
-		   	    	}
-		   	    }
+	    
+	    if (editName.getText().length() > 0)
+	    {
+		   	String portSettings = "";
+		   	
+		   	portSettings += editName.getText();
+		   	portSettings += ",";
+		   	portSettings += editPortNumber.getText();
+		   	portSettings += ",";
+		   	portSettings += editTextIP.getText();
+		   	
+		   	SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getContext());
+		   	
+		   	String strPorts = sharedPrefs.getString("Ports", "");
+		   	ArrayList<String> arrLines = new ArrayList<String>();
+		   	
+		   	if (strPorts.length() != 0)
+		   	{
+		   		String []arrPortLines = strPorts.split("\n");
+		   		
+		   		for (String s : arrPortLines) {
+			   	    String []arr = s.split(",");
+			   	    
+			   	    if (arr.length > 2)
+			   	    {
+			   	    	if (arr[0].contains(editName.getText()) == false)
+			   	    	{
+			   	    		arrLines.add(s);
+			   	    	}
+			   	    }
+			   	}
 		   	}
-	   	}
-	   	
-	   	arrLines.add(portSettings);
-	   	
-	   	strPorts = "";
-	   	
-	   	for(int i = 0; i < arrLines.size(); i++)
-	   	{
-	   		strPorts += (arrLines.get(i) + "\n");
-	   	}
-	   	
-	   	SharedPreferences.Editor editor = sharedPrefs.edit();
-    	editor.putString("Ports", strPorts);
-		editor.commit();
+		   	
+		   	arrLines.add(portSettings);
+		   	
+		   	strPorts = "";
+		   	
+		   	for(int i = 0; i < arrLines.size(); i++)
+		   	{
+		   		strPorts += (arrLines.get(i) + "\n");
+		   	}
+		   	
+		   	SharedPreferences.Editor editor = sharedPrefs.edit();
+	    	editor.putString("Ports", strPorts);
+			editor.commit();
+	    }
+	    else
+	    {
+	    	AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+		    builder.setMessage(R.string.EmptyName).setTitle(R.string.app_name).setPositiveButton("Ok", null);
+		    AlertDialog dialog = builder.create();
+		    dialog.show();
+	    }
 	   	 
 		dismiss();
     }

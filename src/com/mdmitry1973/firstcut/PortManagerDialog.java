@@ -147,6 +147,11 @@ public class PortManagerDialog extends Dialog implements OnClickListener, Dialog
         	sel = 0;
         }
         
+        if (sel >=  arrLines.size())
+        {
+        	sel = 0;
+        }
+        
         s.setSelection(sel);
 	}
 	
@@ -215,7 +220,12 @@ public class PortManagerDialog extends Dialog implements OnClickListener, Dialog
 			   	
 			   	for(int i = 0; i < arrLines.size(); i++)
 			   	{
-			   		strPorts += arrLines.get(i) + "\n";
+			   		String []arrPortLines2 = arrLines.get(i).split(",");
+			   		
+			   		if (arrPortLines2.length > 2)
+			   		{
+			   			strPorts += arrLines.get(i) + "\n";
+			   		}
 			   	}
 			   	
 			   	SharedPreferences.Editor editor = sharedPrefs.edit();

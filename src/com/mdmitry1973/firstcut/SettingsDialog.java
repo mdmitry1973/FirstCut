@@ -14,12 +14,14 @@ import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 
-public class SettingsDialog extends Dialog  {
+public class SettingsDialog extends Dialog implements SeekBar.OnSeekBarChangeListener {
 	
 	SettingsDialog dialog;
 	Context contextDialog;
 	
 	private Spinner spinnerUnit;
+	private SeekBar seekBarTransparent;
+	private TextView textTransparentVal;
 	private int unit;
 
 	public SettingsDialog(Context context) {
@@ -32,12 +34,19 @@ public class SettingsDialog extends Dialog  {
 		contextDialog = context;
 		
 		spinnerUnit = (Spinner) findViewById(R.id.spinnerUnit);
+		seekBarTransparent = (SeekBar) findViewById(R.id.seekBarTransparent);
+		textTransparentVal = (TextView) findViewById(R.id.textViewTranVal);
 		
 		SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context);
 		
 		unit = sharedPrefs.getInt("unit", 0);
 		
 		spinnerUnit.setSelection(unit);
+		seekBarTransparent.setMax(100);
+		seekBarTransparent.setProgress(sharedPrefs.getInt("TransparentToolOption", 50));
+		textTransparentVal.setText(String.format(" %d %%", seekBarTransparent.getProgress()));
+		
+		seekBarTransparent.setOnSeekBarChangeListener(this);
 		
 		Button saveButton = (Button) findViewById(R.id.buttonSave);
 		
@@ -51,6 +60,7 @@ public class SettingsDialog extends Dialog  {
 	        	
 	        	SharedPreferences.Editor editor = sharedPrefs.edit();
 	        	editor.putInt("unit", unit);
+	        	editor.putInt("TransparentToolOption", seekBarTransparent.getProgress());
 	    		editor.commit();
 	        	
 	        	dialog.dismiss();
@@ -67,6 +77,25 @@ public class SettingsDialog extends Dialog  {
 	        	dialog.dismiss();
 	        }
 		});
+	}
+
+	@Override
+	public void onProgressChanged(SeekBar seekBar, int progress,
+			boolean fromUser) {
+		textTransparentVal.setText(String.format(" %d %%", seekBarTransparent.getProgress()));
+		
+	}
+
+	@Override
+	public void onStartTrackingTouch(SeekBar seekBar) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onStopTrackingTouch(SeekBar seekBar) {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

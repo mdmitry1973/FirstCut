@@ -113,5 +113,27 @@ public class ToolsDialog extends Dialog  {
 	        	dialog.dismiss();
 	        }
 		});
+		
+		ImageButton imageButtonStar = (ImageButton) findViewById(R.id.imageButtonStar);
+		
+		imageButtonStar.setOnClickListener(new View.OnClickListener() {
+	        @Override
+	        public void onClick(View v) {
+	        	
+	        	deligate.ToolsChanged(MainActivity.ToolType.Star);
+	        	dialog.dismiss();
+	        }
+		});
+		
+		ImageButton imageButtonArrow = (ImageButton) findViewById(R.id.imageButtonArrow);
+		
+		imageButtonArrow.setOnClickListener(new View.OnClickListener() {
+	        @Override
+	        public void onClick(View v) {
+	        	
+	        	deligate.ToolsChanged(MainActivity.ToolType.Arrow);
+	        	dialog.dismiss();
+	        }
+		});
 	}
 }

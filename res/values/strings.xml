@@ -75,4 +75,23 @@
 	<string name="ChoosePortType">Choose port type</string>
 	<string name="USBPorts">USB Ports:</string>
 	<string name="NotFindPorts">Not find ports</string>
+	<string name="ToolOptionTitle">Tool options</string>
+	<string name="Apply">Apply</string>
+	<string name="Radius">Radius</string>
+	<string name="InnerRadius">Inner radius</string>
+	<string name="NumPoints">Number of points</string>
+	<string name="Rotate">Rotate</string>
+	<string name="None">None</string>
+	<string name="TransparentToolOption">Transparent tool option</string>
+	<string name="TailWidth">Tail width:</string>
+	<string name="TailLength">Tail length:</string>
+	<string name="CapLength">Cap length:</string>
+	<string name="EmptyName">Empty name</string>
+	<string name="CurrentFont">Current font:</string>
+	<string name="Bold">Bold</string>
+	<string name="Italic">Italic</string>
+	<string name="Space">Space:</string>
+	<string name="LoadFontMsg">Loading font</string>
+	<string name="LoadFontTitle">Loading font</string>
+	<string name="Pro">%</string>
 </resources>

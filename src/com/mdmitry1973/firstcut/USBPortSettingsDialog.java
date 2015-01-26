@@ -139,64 +139,74 @@ public class USBPortSettingsDialog extends Dialog implements OnClickListener{
 	public void onOK(View v) {
 	   	Log.v("PortManagerDialog", "onOK");
 	   	
-	   	String portSettings = "";
-	   	SpinnerAdapter adp = spinnerUSBPorts.getAdapter();
-		int sel = spinnerUSBPorts.getSelectedItemPosition();
-	   	
-		if (sel < adp.getCount())
-		{
-			String itemName = (String) adp.getItem(sel);
-			
-		   	portSettings += "TYPE_USB";
-		   	portSettings += ",";
-		   	portSettings += editName.getText();
-		   	portSettings += ",";
-		   	portSettings += itemName;
+	   	if (editName.getText().length() > 0)
+	    {
+		   	String portSettings = "";
+		   	SpinnerAdapter adp = spinnerUSBPorts.getAdapter();
+			int sel = spinnerUSBPorts.getSelectedItemPosition();
 		   	
-		   	SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getContext());
-		   	
-		   	String strPorts = sharedPrefs.getString("Ports", "");
-		   	ArrayList<String> arrLines = new ArrayList<String>();
-		   	
-		   	if (strPorts.length() != 0)
-		   	{
-		   		String []arrPortLines = strPorts.split("\n");
-		   		
-		   		for (String s : arrPortLines) {
-			   	    String []arr = s.split(",");
-			   	    
-			   	    if (arr.length > 2)
-			   	    {
-			   	    	if (arr[0].contentEquals(editName.getText()) == false)
-			   	    	{
-			   	    		arrLines.add(s);
-			   	    	}
-			   	    	else
-			   	    	{
-			   	    		AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-					    	builder.setMessage(R.string.ChangePortName).setTitle(R.string.app_name).setPositiveButton("Ok", null);
-					    	AlertDialog dialog = builder.create();
-					    	dialog.show();
-					    	
-					    	return;
-			   	    	}
-			   	    }
+			if (sel < adp.getCount())
+			{
+				String itemName = (String) adp.getItem(sel);
+				
+			   	portSettings += "TYPE_USB";
+			   	portSettings += ",";
+			   	portSettings += editName.getText();
+			   	portSettings += ",";
+			   	portSettings += itemName;
+			   	
+			   	SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getContext());
+			   	
+			   	String strPorts = sharedPrefs.getString("Ports", "");
+			   	ArrayList<String> arrLines = new ArrayList<String>();
+			   	
+			   	if (strPorts.length() != 0)
+			   	{
+			   		String []arrPortLines = strPorts.split("\n");
+			   		
+			   		for (String s : arrPortLines) {
+				   	    String []arr = s.split(",");
+				   	    
+				   	    if (arr.length > 2)
+				   	    {
+				   	    	if (arr[0].contentEquals(editName.getText()) == false)
+				   	    	{
+				   	    		arrLines.add(s);
+				   	    	}
+				   	    	else
+				   	    	{
+				   	    		AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+						    	builder.setMessage(R.string.ChangePortName).setTitle(R.string.app_name).setPositiveButton("Ok", null);
+						    	AlertDialog dialog = builder.create();
+						    	dialog.show();
+						    	
+						    	return;
+				   	    	}
+				   	    }
+				   	}
 			   	}
-		   	}
-		   	
-		   	arrLines.add(portSettings);
-		   	
-		   	strPorts = "";
-		   	
-		   	for(int i = 0; i < arrLines.size(); i++)
-		   	{
-		   		strPorts += (arrLines.get(i) + "\n");
-		   	}
-		   	
-		   	SharedPreferences.Editor editor = sharedPrefs.edit();
-	    	editor.putString("Ports", strPorts);
-			editor.commit();
-		}
+			   	
+			   	arrLines.add(portSettings);
+			   	
+			   	strPorts = "";
+			   	
+			   	for(int i = 0; i < arrLines.size(); i++)
+			   	{
+			   		strPorts += (arrLines.get(i) + "\n");
+			   	}
+			   	
+			   	SharedPreferences.Editor editor = sharedPrefs.edit();
+		    	editor.putString("Ports", strPorts);
+				editor.commit();
+			}
+	    }
+	   	else
+	   	{
+	   		AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+		    builder.setMessage(R.string.EmptyName).setTitle(R.string.app_name).setPositiveButton("Ok", null);
+		    AlertDialog dialog = builder.create();
+		    dialog.show();
+	   	}
 	   	 
 		dismiss();
     }

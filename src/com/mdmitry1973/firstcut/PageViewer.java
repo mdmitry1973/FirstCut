@@ -3,7 +3,11 @@ package com.mdmitry1973.firstcut;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.mdmitry1973.firstcut.CutObject.CutObjectType;
+
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -45,15 +49,14 @@ import android.widget.RelativeLayout.LayoutParams;
 public class PageViewer extends View 
 							implements OnScaleGestureListener,
 										OnGestureListener,
-										OnDoubleTapListener,
-										View.OnKeyListener
+										OnDoubleTapListener
 {
 	private MainActivity mainActivity = null;
 	private Canvas drawCanvas = null;
 	private Bitmap canvasBitmap = null;
 	private Paint backgroundPaint, backgroundDrawCanvas, canvasPaint, selRectPaint, selCirclePaint, textPaint;
 	private ArrayList<CutObject> listPath;
-	private CutObject currentPath;
+	private CutObject currentPath = null;
 	private Paint currentPaint;
 	private int selPathIndex = -1;
 	private RectF boundSelRect = null; 
@@ -79,9 +82,7 @@ public class PageViewer extends View
 	private ScaleGestureDetector scaleGestureDetector;
 	private GestureDetectorCompat mDetector; 
 	
-	private final float marginPress = 10.0f;
-	
-	private EditText textEnter = null;
+	private float marginPress = 10.0f;
 	
 	enum ScaleType {
 		top,
@@ -133,6 +134,10 @@ public class PageViewer extends View
 	
 	public void Init()
 	{
+		DisplayMetrics metrics = getResources().getDisplayMetrics();
+		
+		marginPress = 0.12f*metrics.xdpi;//0.3 cm
+		
 		currentToolType = MainActivity.ToolType.Line;
 		
 		backgroundDrawCanvas = new Paint();
@@ -145,7 +150,6 @@ public class PageViewer extends View
 		
 		listPath = new ArrayList<CutObject>();
 		
-		currentPath = new CutObject();
 		currentPaint = new Paint();
 		
 		currentPaint.setColor(Color.BLACK);
@@ -153,7 +157,7 @@ public class PageViewer extends View
 		currentPaint.setStrokeWidth(3);
 		currentPaint.setStyle(Paint.Style.STROKE);
 		currentPaint.setStrokeJoin(Paint.Join.ROUND);
-		currentPaint.setStrokeCap(Paint.Cap.ROUND);
+		currentPaint.setStrokeCap(Paint.Cap.BUTT );
 		
 		selRectPaint = new Paint(Paint.DITHER_FLAG);
 		selRectPaint.setColor(Color.GREEN);
@@ -232,7 +236,12 @@ public class PageViewer extends View
 	{
 		selPathIndex = -1;
 		listPath.clear();
-		currentPath.getObjectPath().clear();
+		
+		if (currentPath != null)
+		{
+			currentPath.clear();
+		}
+		
 		DrawBitmap();
 		invalidate();
 	}
@@ -251,7 +260,8 @@ public class PageViewer extends View
 	public void SetCurrentTool(MainActivity.ToolType toolType)
 	{
 		currentToolType = toolType;
-		currentPath.getObjectPath().clear();
+		currentPath = null;
+		
 		invalidate();
 	}
 	
@@ -263,6 +273,36 @@ public class PageViewer extends View
 		PrepareBitmap();
 		RecalcSize();
 		DrawBitmap();
+	}
+	
+	public float getZoomMax()
+	{
+		return zoomFactorMax;
+	}
+	
+	public float getZoomMin()
+	{
+		return zoomFactorMin;
+	}
+	
+	public float getZoom()
+	{
+		return zoomFactor;
+	}
+	
+	public void setZoom(float zoom)
+	{
+		zoomFactor = zoom;
+		
+		rulerVer.setZoom(zoomFactor);
+		rulerHor.setZoom(zoomFactor);
+		
+		RecalcSize();
+		DrawBitmap();
+		
+		invalidate();
+		rulerVer.invalidate();
+		rulerHor.invalidate();
 	}
 	
 	public void RecalcSize()
@@ -317,51 +357,80 @@ public class PageViewer extends View
 	    }
 	}
 	
+	public Path setStar(float x, float y, float radius, float innerRadius, int numOfPt)
+	{
+		  
+		double section = 2.0 * Math.PI/numOfPt;
+			  
+		Path path = new Path();
+		  path.moveTo(
+		   (float)(x + radius * Math.cos(0)), 
+		   (float)(y + radius * Math.sin(0)));
+		  path.lineTo(
+		   (float)(x + innerRadius * Math.cos(0 + section/2.0)), 
+		   (float)(y + innerRadius * Math.sin(0 + section/2.0)));
+		  
+		  for(int ii = 1; ii < numOfPt; ii++)
+		  {
+		   path.lineTo(
+		    (float)(x + radius * Math.cos(section * ii)), 
+		    (float)(y + radius * Math.sin(section * ii)));
+		   path.lineTo(
+		     (float)(x + innerRadius * Math.cos(section * ii + section/2.0)), 
+		     (float)(y + innerRadius * Math.sin(section * ii + section/2.0)));
+		  }
+		  
+		  path.close();
+		  
+		  return path;
+	}
+	
 	public void DrawBitmap()
 	{
 		try {
 			
-			drawCanvas.drawRect(-offsetPoint.x, -offsetPoint.y, 
-					((-offsetPoint.x) + drawCanvas.getWidth())*zoomFactor, 
-					((-offsetPoint.y) + drawCanvas.getHeight())*zoomFactor, 
-					backgroundDrawCanvas);
+			//drawCanvas.drawRect(-offsetPoint.x, -offsetPoint.y, 
+			//		((-offsetPoint.x) + drawCanvas.getWidth())*zoomFactor, 
+			///		((-offsetPoint.y) + drawCanvas.getHeight())*zoomFactor, 
+			//		backgroundDrawCanvas);
+			
+			drawCanvas.drawRect(0, 0,//-offsetPoint.x*100, -offsetPoint.y*100, 
+					drawCanvas.getWidth()*20, 
+					drawCanvas.getHeight()*20, 
+					backgroundDrawCanvas);//backgroundPaint);
 			
 			for (int i = 0; i < listPath.size(); i++)
 			{
-				ArrayList<PointF> points = listPath.get(i).getObjectPath();
+				CutObject obj = listPath.get(i);
 				
-				CutObject.CutObjectType objectType = listPath.get(i).getType();
-				
-				if (objectType == CutObject.CutObjectType.Text)
+				if (obj != null)
 				{
+					/*
+					CutObjectText textObject = (CutObjectText)obj;
 					
-				}
-				else
-				if (objectType == CutObject.CutObjectType.Box && points.size() > 1)
-				{
-					RectF rect = new RectF(points.get(0).x, points.get(0).y, points.get(1).x, points.get(1).y);
-					
-					rect.sort();
-					
-					drawCanvas.drawRect(rect, currentPaint);
-				}
-				else
-				if (objectType == CutObject.CutObjectType.Circle && points.size() > 1)
-				{
-					RectF rect = new RectF(points.get(0).x, points.get(0).y, points.get(1).x, points.get(1).y);
-					
-					rect.sort();
-					
-					drawCanvas.drawOval(rect, currentPaint);
-				}
-				else
-				{
-					for (int n = 1; n < points.size(); n++)
+					if (textObject != null)
 					{
-						PointF p1 = points.get(n - 1);
-						PointF p2 = points.get(n);
+						ArrayList<Path> pathes = textObject.getTextPathes("Example");
 						
-						drawCanvas.drawLine(p1.x , p1.y, p2.x, p2.y, currentPaint);
+						for(int n = 0; n < pathes.size(); n++)
+						{
+							Path path = pathes.get(n);
+							
+							if (path != null)
+							{
+								drawCanvas.drawPath(path, currentPaint);
+							}
+						}
+					}
+					else
+					*/
+					{	
+						Path path = obj.getDrawPath();
+						
+						if (path != null)
+						{
+							drawCanvas.drawPath(path, currentPaint);
+						}
 					}
 				}
 			}
@@ -400,97 +469,51 @@ public class PageViewer extends View
 	{
 		try {
 		
-			canvas.drawRect(0, 0, canvas.getWidth(), canvas.getHeight(), backgroundPaint);
+			//canvas.drawRect(0, 0, canvas.getWidth(), canvas.getHeight(), backgroundPaint);
 			
 			canvas.drawBitmap(canvasBitmap, 0, 0, canvasPaint);
 			
-			ArrayList<PointF> points = currentPath.getObjectPath();
-			CutObject.CutObjectType objectType = currentPath.getType();
-			
-			if (objectType == CutObject.CutObjectType.Box && points.size() > 1)
+			if (currentPath != null)
 			{
-				RectF rect = new RectF(points.get(0).x, points.get(0).y, points.get(1).x, points.get(1).y);
+				/*
+				CutObjectText textObject = (CutObjectText)currentPath;
 				
-				rect.sort();
-				
-				matrixToDraw.mapRect(rect);
-				
-				canvas.drawRect(rect, currentPaint);
-			}
-			else
-			if (objectType == CutObject.CutObjectType.Circle && points.size() > 1)
-			{
-				RectF rect = new RectF(points.get(0).x, points.get(0).y, points.get(1).x, points.get(1).y);
-				
-				rect.sort();
-				
-				matrixToDraw.mapRect(rect);
-				
-				canvas.drawOval(rect, currentPaint);
-			}
-			else
-			{
-				for (int n = 1; n < points.size(); n++)
+				if (textObject != null)
 				{
-					PointF p1 = points.get(n - 1);
-					PointF p2 = points.get(n);
+					ArrayList<Path> pathes = textObject.getTextPathes("Example");
 					
-					float [] pts = {p1.x, p1.y, p2.x, p2.y};
-					
-					matrixToDraw.mapPoints(pts);
-					
-					canvas.drawLine(pts[0], pts[1], pts[2], pts[3], currentPaint);
-				}
-			}
-			
-		} catch (Exception e) {
-	           
-			Log.v("PageViewer", "Error" + e);
-	    }
-	}
-	
-	@Override
-	public boolean onKey(View v, int keyCode, KeyEvent event)
-	{
-		if (currentToolType == MainActivity.ToolType.Text && textEnter != null)
-		{
-			if (currentPath.getType() == CutObject.CutObjectType.Text)
-			{
-				if (keyCode == KeyEvent.KEYCODE_ENTER)
-				{
-					RelativeLayout layout = (RelativeLayout)mainActivity.findViewById(R.id.relativeLayoutCutView);
-					
-					if (layout != null && textEnter != null)
+					for(int n = 0; n < pathes.size(); n++)
 					{
-						String txt = textEnter.getText().toString();
+						Path path = pathes.get(n);
 						
-						if (txt.length() > 0)
+						if (path != null)
 						{
-							currentPath.setText(txt);
-							currentPath.close();
-							listPath.add(currentPath);
+							path.transform(matrixToDraw);
+							canvas.drawPath(path, currentPaint);
 						}
-						
-						layout.removeView(textEnter);
-						
-						textEnter = null;
 					}
 				}
 				else
+				*/
 				{
-					String  strText = textEnter.getText().toString();
+					Path path = currentPath.getDrawPath();
 					
-					if (strText.length() > 0)
+					if (path != null)
 					{
-						float width = textPaint.measureText(strText);
-					
-						textEnter.setWidth((int)(width) + (strText.length() * 5));
+						path.transform(matrixToDraw);
+						canvas.drawPath(path, currentPaint);
+					}
+					else
+					{
+						assert path != null;
 					}
 				}
 			}
-		}
-		
-		return false;
+		} 
+		catch (Exception e) 
+		{
+			Log.v("PageViewer", "Error" + e);
+	    }
 	}
 	
 	//register user touches as drawing action
@@ -506,7 +529,10 @@ public class PageViewer extends View
 			
 			if (scaleGestureDetector.isInProgress())
 			{
-				currentPath.getObjectPath().clear();
+				if (currentPath != null)
+				{
+					currentPath.clear();
+				}
 				
 				return resScale;
 			}
@@ -539,15 +565,13 @@ public class PageViewer extends View
 					
 				}
 				else
-				if (currentToolType == MainActivity.ToolType.Text)
-				{
-					
-				}
-				else
 				if ((currentToolType == MainActivity.ToolType.Pen ||
 					currentToolType == MainActivity.ToolType.Line ||
 					currentToolType == MainActivity.ToolType.Box ||
-					currentToolType == MainActivity.ToolType.Circle) &&
+					currentToolType == MainActivity.ToolType.Star ||
+					currentToolType == MainActivity.ToolType.Arrow ||
+					currentToolType == MainActivity.ToolType.Circle ||
+					currentToolType == MainActivity.ToolType.Text) &&
 					currentPath.size() > 0)
 				{
 					if (currentToolType == MainActivity.ToolType.Pen)
@@ -557,18 +581,74 @@ public class PageViewer extends View
 					else
 						if (currentToolType == MainActivity.ToolType.Line ||
 							currentToolType == MainActivity.ToolType.Box ||
-							currentToolType == MainActivity.ToolType.Circle)
+							currentToolType == MainActivity.ToolType.Star ||
+							currentToolType == MainActivity.ToolType.Arrow ||
+							currentToolType == MainActivity.ToolType.Circle ||
+							currentToolType == MainActivity.ToolType.Text)
 						{
 							if (currentPath.size() > 1)
 							{
-								currentPath.getObjectPath().remove(currentPath.size() - 1);
+								currentPath.remove(currentPath.size() - 1);
 							}
 							
 							currentPath.add(new PointF(touchX, touchY));
 						}
 					
-					listPath.add(new CutObject((ArrayList<PointF>)currentPath.getObjectPath(), currentPath.getType()));
-					currentPath.getObjectPath().clear();
+					//ask for text
+					if (currentToolType == MainActivity.ToolType.Text)
+					{
+						final AlertDialog.Builder alert = new AlertDialog.Builder(mainActivity);
+					    final EditText input = new EditText(mainActivity);
+					    alert.setView(input);
+					    alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+					        public void onClick(DialogInterface dialog, int whichButton) {
+					            String value = input.getText().toString().trim();
+					           
+					            if (!value.isEmpty())
+					            {
+						            SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getContext());
+									CutObject object = CutObject.CreateObject(currentPath.getListPoints(), currentPath.getType());
+									
+									((CutObjectText)object).setFontManger(mainActivity);
+									
+									object.setCurrentPrefs(sharedPrefs);
+									((CutObjectText)object).setText(value);
+									
+									listPath.add(object);
+					            }
+								
+								currentPath = null;
+								
+								DrawBitmap();
+								
+								invalidate();
+					        }
+					    });
+
+					    alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+					        public void onClick(DialogInterface dialog, int whichButton) {
+					        	
+					            dialog.cancel();
+					            
+					            currentPath = null;
+					            
+					            DrawBitmap();
+					            
+					            invalidate();
+					        }
+					    });
+					    alert.show();
+					    return false;
+					}
+					
+					SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getContext());
+					CutObject object = CutObject.CreateObject(currentPath.getListPoints(), currentPath.getType());
+					
+					object.setCurrentPrefs(sharedPrefs);
+					
+					listPath.add(object);
+					
+					currentPath = null;
 					
 					DrawBitmap();
 				}
@@ -579,8 +659,6 @@ public class PageViewer extends View
 			
 			Log.d("onTouchEvent", "event=" + event);
 		}
-		
-		
 		
 		return super.onTouchEvent(event);
 	}
@@ -620,6 +698,8 @@ public class PageViewer extends View
 				
 				rulerVer.invalidate();
 				rulerHor.invalidate();
+				
+				mainActivity.ResetUIInfo();
 			}
 			
 		} catch (Exception e) {
@@ -660,15 +740,18 @@ public class PageViewer extends View
 				focusScale.y = detector.getFocusY();
 				
 				RecalcSize();
-				DrawBitmap();
-		       
-				invalidate();
 				
 				rulerVer.setZoom(zoomFactor);
 				rulerHor.setZoom(zoomFactor);
 				
+				DrawBitmap();
+				
+				invalidate();
+				
 				rulerVer.invalidate();
 				rulerHor.invalidate();
+				
+				mainActivity.ResetUIInfo();
 			}
 		} catch (Exception e) {
 	           
@@ -741,72 +824,15 @@ public class PageViewer extends View
 		touchX = pts[0];
 		touchY = pts[1];
 		
-		currentPath.getObjectPath().clear();
 		scaleType = ScaleType.none;
 		
-		if (currentToolType == MainActivity.ToolType.Text)
-		{
-			selPathIndex = -1;
-			
-			RelativeLayout layout = (RelativeLayout)mainActivity.findViewById(R.id.relativeLayoutCutView);
-			
-			if (layout != null)
-			{
-				if (textEnter != null)
-				{
-					layout.removeView(textEnter);
-						
-					textEnter = null;
-				}
-				
-				Typeface stringTypeFace = Typeface.create(Typeface.SERIF, Typeface.NORMAL);
-				
-				currentPath.setTypeface(stringTypeFace);
-				currentPath.setType(CutObject.CutObjectType.Text);
-				currentPath.add(new PointF(touchX, touchY));
-				
-				{
-					textEnter = new EditText(this.getContext());
-					
-					textEnter.setWidth(100);
-					textEnter.setHeight(50);
-					textEnter.setOnKeyListener(this);
-					textEnter.setSingleLine(true);
-					textEnter.setTypeface(currentPath.getTypeface());
-					textEnter.setTextSize(currentPath.getStringSize());
-					
-					textPaint.setTypeface(currentPath.getTypeface());
-					textPaint.setTextSize(currentPath.getStringSize());
-					
-					LayoutParams layoutParams=new LayoutParams(100, 50);
-					layoutParams.addRule(RelativeLayout.ABOVE);
-					layoutParams.setMargins((int)event.getX(), (int)event.getY(), 0, 0);
-					layoutParams.width = ViewGroup.LayoutParams.WRAP_CONTENT;
-					
-					layout.addView(textEnter, layoutParams);
-					
-					textEnter.setFocusableInTouchMode(true);
-					textEnter.requestFocus();
-					
-					InputMethodManager imm = (InputMethodManager)this.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-			        if (imm.showSoftInput(textEnter, InputMethodManager.SHOW_IMPLICIT))
-			        {
-			        	
-			        }
-			        else
-			        {
-			        	Log.v("onTouchEvent", "MainActivity.ToolType.Text");
-			        }
-				}
-				
-				invalidate();
-			}
-		}
-		else
 		if (currentToolType == MainActivity.ToolType.Pen ||
 			currentToolType == MainActivity.ToolType.Line ||
 			currentToolType == MainActivity.ToolType.Box ||
-        	currentToolType == MainActivity.ToolType.Circle)
+			currentToolType == MainActivity.ToolType.Star ||
+			currentToolType == MainActivity.ToolType.Arrow ||
+        	currentToolType == MainActivity.ToolType.Circle ||
+        	currentToolType == MainActivity.ToolType.Text)
 		{
 			selPathIndex = -1;
 			
@@ -822,9 +848,26 @@ public class PageViewer extends View
 				currentObjectType = CutObject.CutObjectType.Circle;
 			if (currentToolType == MainActivity.ToolType.Text)
 				currentObjectType = CutObject.CutObjectType.Text;
+			if (currentToolType == MainActivity.ToolType.Arrow)
+				currentObjectType = CutObject.CutObjectType.Arrow;
+			if (currentToolType == MainActivity.ToolType.Star)
+				currentObjectType = CutObject.CutObjectType.Star;
+			if (currentToolType == MainActivity.ToolType.Text)
+				currentObjectType = CutObject.CutObjectType.Text;
 			
-			currentPath.setType(currentObjectType);
+			currentPath = CutObject.CreateObject(currentObjectType);
+			
 			currentPath.add(new PointF(touchX, touchY));
+			
+			if (currentToolType == MainActivity.ToolType.Text)
+			{
+				((CutObjectText)currentPath).setFontManger(mainActivity);
+			}
+			
+			SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this.getContext());
+			
+			currentPath.setCurrentPrefs(sharedPrefs);
+			
 			invalidate();
 		}
 		else
@@ -911,6 +954,8 @@ public class PageViewer extends View
 		else
 		{
 			selPathIndex = -1;
+			DrawBitmap();
+			invalidate();
 		}
 		
         return true;
@@ -935,7 +980,10 @@ public class PageViewer extends View
         if (currentToolType == MainActivity.ToolType.Pen ||
         	currentToolType == MainActivity.ToolType.Line ||
         	currentToolType == MainActivity.ToolType.Box ||
-        	currentToolType == MainActivity.ToolType.Circle)
+        	currentToolType == MainActivity.ToolType.Star ||
+        	currentToolType == MainActivity.ToolType.Arrow ||
+        	currentToolType == MainActivity.ToolType.Circle ||
+        	currentToolType == MainActivity.ToolType.Text)
 		{
         	float touchX = e2.getX();
     		float touchY = e2.getY();
@@ -949,22 +997,20 @@ public class PageViewer extends View
     		
     		if (currentToolType == MainActivity.ToolType.Line ||
     			currentToolType == MainActivity.ToolType.Box ||
-    	        currentToolType == MainActivity.ToolType.Circle)
+    			currentToolType == MainActivity.ToolType.Star ||
+    		    currentToolType == MainActivity.ToolType.Arrow ||
+    	        currentToolType == MainActivity.ToolType.Circle ||
+    	        currentToolType == MainActivity.ToolType.Text)
     		{
 	        	if (currentPath.size() > 1)
 				{
-					currentPath.getObjectPath().remove(currentPath.size() - 1);
+					currentPath.remove(currentPath.size() - 1);
 				}
     		}
     		
 			currentPath.add(new PointF(touchX, touchY));
 			
-			if (mainActivity != null)
-			{
-				RectF boundSelRect = CutObject.getComputeBounds(currentPath.getObjectPath());
-				
-				mainActivity.setSelObjectCoor(boundSelRect);
-			}
+			mainActivity.ResetUIInfo();
 		}
 		else
 		if (currentToolType == MainActivity.ToolType.Hand)
@@ -1122,7 +1168,7 @@ public class PageViewer extends View
 						 
 						 matrixToReal.mapRect(newTemp);
 						 
-						 Matrix matrix = listPath.get(selPathIndex).getMatrix();
+						 Matrix matrix = new Matrix();// listPath.get(selPathIndex).getMatrix();
 						 
 						 matrix.setRectToRect(boundSelRect, newTemp, Matrix.ScaleToFit.FILL);
 						 
@@ -1131,10 +1177,7 @@ public class PageViewer extends View
 					 
 					boundSelRect = listPath.get(selPathIndex).getComputeBounds();
 					 
-					if (mainActivity != null)
-					{
-						mainActivity.setSelObjectCoor(boundSelRect);
-					}
+					mainActivity.ResetUIInfo();
 							 
 					DrawBitmap();
 				}
@@ -1145,14 +1188,20 @@ public class PageViewer extends View
         
         return true;
     }
+    
+    public void resetSelBox()
+    {
+    	if (selPathIndex != -1 && selPathIndex < listPath.size())
+    	{
+    		boundSelRect = listPath.get(selPathIndex).getComputeBounds();
+    	}
+    }
 
     @Override
     public void onShowPress(MotionEvent event) {
         Log.d("PageViewer", "onShowPress: " + event.toString());
     }
     
-    
-
     @Override
     public boolean onSingleTapUp(MotionEvent event) {
         
@@ -1177,14 +1226,18 @@ public class PageViewer extends View
 				reDraw = true;
 			}
 			
-			currentPath.getObjectPath().clear();
+			if (currentPath != null)
+			{
+				currentPath.clear();
+			}
+			
 			boundSelRect = null;
 			selPathIndex = -1;
 			
 			{
 				for(int i = 0; i < listPath.size(); i++)
 				{
-					ArrayList<PointF> path = listPath.get(i).getObjectPath();
+					ArrayList<PointF> path = listPath.get(i).getListPoints();
 					
 					RectF boundRect = listPath.get(i).getComputeBounds();
 					RectF boundTempRect = new RectF(boundRect);
@@ -1197,19 +1250,20 @@ public class PageViewer extends View
 					if (boundTempRect.contains(touchX, touchY) == true)
 					{
 						if (listPath.get(i).getType() == CutObject.CutObjectType.Box ||
-							listPath.get(i).getType() == CutObject.CutObjectType.Circle)
+							listPath.get(i).getType() == CutObject.CutObjectType.Circle ||
+							listPath.get(i).getType() == CutObject.CutObjectType.Star ||
+							listPath.get(i).getType() == CutObject.CutObjectType.Arrow ||
+							listPath.get(i).getType() == CutObject.CutObjectType.Text)
 						{
 							boundSelRect = new RectF(boundRect);
 							
 							selPathIndex = i;
 							
-							if (mainActivity != null)
-							{
-								mainActivity.setSelObjectCoor(boundSelRect);
-							}
+							mainActivity.ResetUIInfo();
 							
 							DrawBitmap();
 							invalidate();
+							break;
 						}
 						else
 						{
@@ -1227,10 +1281,7 @@ public class PageViewer extends View
 									
 									selPathIndex = i;
 									
-									if (mainActivity != null)
-									{
-										mainActivity.setSelObjectCoor(boundSelRect);
-									}
+									mainActivity.ResetUIInfo();
 									
 									DrawBitmap();
 									invalidate();
@@ -1267,16 +1318,16 @@ public class PageViewer extends View
 				{
 					if (currentPath.size() > 1)
 					{
-						currentPath.getObjectPath().remove(currentPath.size() - 1);
+						currentPath.remove(currentPath.size() - 1);
 					}
 					
 					currentPath.add(new PointF(touchX, touchY));
 					currentObjectType = CutObject.CutObjectType.Line;
 				}
 			
-			listPath.add(new CutObject((ArrayList<PointF>)currentPath.getObjectPath().clone(), currentObjectType));
+			listPath.add(CutObject.CreateObject(currentPath.getListPoints(), currentObjectType));
 			
-			currentPath.getObjectPath().clear();
+			currentPath.clear();
 			
 			DrawBitmap();
 		}
@@ -1326,5 +1377,23 @@ public class PageViewer extends View
         Log.d("PageViewer", "onSingleTapConfirmed: " + event.toString());
         return true;
     }
+    
+    public CutObject getCurrentObject()
+    {
+    	if (currentPath == null)
+    	{
+    		if (selPathIndex != -1 && selPathIndex < listPath.size())
+    		{
+    			return listPath.get(selPathIndex);
+    		}
+    	}
+    	
+    	return currentPath;
+    }
+    
+    // void setCurrentObject(CutObject obj)
+   // {
+    //	currentPath = obj;
+    //}
 }
 
