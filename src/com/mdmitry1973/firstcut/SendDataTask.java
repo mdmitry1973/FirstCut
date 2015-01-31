@@ -27,6 +27,7 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 	double xdpi;
 	double ydpi;
 	SharedPreferences sharedPrefs;
+	String data = "";
 	
 	public SendDataTask(ProgressDialog progressDialog)
 	{
@@ -46,6 +47,19 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 	public void setPref(SharedPreferences sharedPrefs)
 	{
 		this.sharedPrefs = sharedPrefs;
+	}
+	
+	public Boolean checkForSendData(int nMaxSend, int nSentObj)
+	{
+		publishProgress((int) ((nSentObj / (float) nMaxSend) * 100));
+		
+		if (data.length() > 100000)
+		{
+			sendDataToPort(data.getBytes());
+			data = "";
+		}
+		
+		return true;
 	}
 	
 	public Boolean send()
@@ -96,8 +110,6 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 		   	float xUnit = (float)(res/xdpi);
 	  		float yUnit = (float)(res/ydpi);
 			
-			String data = "";
-			
 			if (absoluteCommand.length() != 0)
 			{
 				data = initCommand + absoluteCommand + separator;
@@ -108,6 +120,9 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 			}
 			
 			data = data + upCommand + separator;
+			
+			int nMaxSend = objects.size();
+			int nSentObj = 0;
 			
 			for (int j = 0; j < objects.size(); j++) 
 			{
@@ -364,6 +379,8 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 					CutObjectText textObj = (CutObjectText)path;
 					ArrayList<Path> pathes = textObj.getTextPathes(textObj.getText());
 					
+					nMaxSend = nMaxSend + (pathes.size() - 1);
+					
 					for(int nn = 0; nn < pathes.size(); nn++)
 					{
 						Path textPath = pathes.get(nn);
@@ -371,52 +388,72 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 						ArrayList<PointF> outputPoints = new ArrayList<PointF>();
 						PointF prePoint = new PointF(0, 0);
 						
-						for (float distance = 0; distance < pathMeasure.getLength(); distance++) 
+						do
 						{
-							float[] pos = new float[2];
-							float[] tan = new float[2];
+							outputPoints.clear();
 							
-							if (pathMeasure.getPosTan(distance, pos, tan))
+							for (float distance = 0; distance < pathMeasure.getLength(); distance++) 
 							{
-								PointF newPoint = new PointF(pos[0], pos[1]);
+								float[] pos = new float[2];
+								float[] tan = new float[2];
 								
-								if (distance == 0)
+								if (pathMeasure.getPosTan(distance, pos, tan))
 								{
-									prePoint = new PointF(newPoint.x, newPoint.y);
-									outputPoints.add(newPoint);
-								}
-								else
-								{
-									if (Math.abs(newPoint.x - prePoint.x) >= 1.0f ||
-										Math.abs(newPoint.y - prePoint.y) >= 1.0f)// ||
-										///distance == pathMeasure.getLength() - 1)
+									PointF newPoint = new PointF(pos[0], pos[1]);
+									
+									if (distance == 0)
 									{
 										prePoint = new PointF(newPoint.x, newPoint.y);
 										outputPoints.add(newPoint);
 									}
+									else
+									{
+										if (Math.abs(newPoint.x - prePoint.x) >= 1.0f ||
+											Math.abs(newPoint.y - prePoint.y) >= 1.0f)// ||
+											///distance == pathMeasure.getLength() - 1)
+										{
+											prePoint = new PointF(newPoint.x, newPoint.y);
+											outputPoints.add(newPoint);
+										}
+									}
 								}
 							}
-						}
 						
-						for(int n = 0; n < outputPoints.size(); n++)
-						{
-							if (n == 0)
+							for(int n = 0; n < outputPoints.size(); n++)
 							{
-								data += String.format("%s%d,%d%s%s%d,%d", 
-										upCommand,
-										(int)outputPoints.get(n).x, (int)outputPoints.get(n).y,
-										separator,
-										downCommand,
-										(int)outputPoints.get(n).x, (int)outputPoints.get(n).y);
+								if (n == 0)
+								{
+									data += String.format("%s%d,%d%s%s%d,%d", 
+											upCommand,
+											(int)outputPoints.get(n).x, (int)outputPoints.get(n).y,
+											separator,
+											downCommand,
+											(int)outputPoints.get(n).x, (int)outputPoints.get(n).y);
+								}
+								else
+								{
+									data += String.format(",%d,%d", 
+											(int)outputPoints.get(n).x, (int)outputPoints.get(n).y);
+								}
 							}
-							else
-							{
-								data += String.format(",%d,%d", 
-										(int)outputPoints.get(n).x, (int)outputPoints.get(n).y);
-							}
+							
+							data += separator;
 						}
+						while(pathMeasure.nextContour());
 						
-						data += separator;
+						nSentObj++;
+						
+						data += String.format(upCommand + separator);
+						
+						checkForSendData(nMaxSend, nSentObj);
+						
+						//publishProgress((int) ((j / (float) nMaxSend) * 100));
+						
+						//if (data.length() > 100000)
+						//{
+						//	sendDataToPort(data.getBytes());
+						//	data = "";
+						//}
 					}
 				}
 				else
@@ -440,16 +477,20 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 					data = data.substring(0, data.length() - 1);
 					data += separator;
 				}
+				
+				nSentObj++;
 		   
 				data += String.format(upCommand + separator);
 				
-				publishProgress((int) ((j / (float) objects.size()) * 100));
+				checkForSendData(nMaxSend, nSentObj);
 				
-				if (data.length() > 100000)
-				{
-					sendDataToPort(data.getBytes());
-					data = "";
-				}
+				//publishProgress((int) ((j / (float) nMaxSend) * 100));
+				
+				//if (data.length() > 100000)
+				//{
+				//	sendDataToPort(data.getBytes());
+				//	data = "";
+				//}
 			}
 			
 			if (data.length() > 0)

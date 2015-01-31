@@ -18,8 +18,11 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.Spinner;
 import android.widget.SpinnerAdapter;
 
@@ -28,6 +31,10 @@ public class SendDialod  extends Dialog  implements OnClickListener {
 	private Spinner spinnerPorts;
 	private Spinner spinnerDevices;
 	private SendDialoginterface licOk;
+	private CoorViewer coorViewer;
+	private Spinner spinnerRotate;
+	private ImageButton imageButtonFlipVer;
+	private ImageButton imageButtonFlipHor;
 	
 	public void setSendDialoginterface(SendDialoginterface licOk)
 	{
@@ -43,11 +50,54 @@ public class SendDialod  extends Dialog  implements OnClickListener {
 		
 		SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getContext());
 		
+		imageButtonFlipVer = (ImageButton)findViewById(R.id.imageButtonFlipVer);
+		imageButtonFlipHor = (ImageButton)findViewById(R.id.imageButtonFlipHoz);
+		
+		imageButtonFlipVer.setOnClickListener(this);
+		imageButtonFlipHor.setOnClickListener(this);
+		
 		((Button)findViewById(R.id.buttonSend)).setOnClickListener(this);
 		((Button)findViewById(R.id.buttonCancel)).setOnClickListener(this);
+		((Button)findViewById(R.id.buttonReset)).setOnClickListener(this);
 		
+		coorViewer = (CoorViewer)findViewById(R.id.coorViewe);
 		spinnerPorts = (Spinner)findViewById(R.id.spinnerPorts);
 		spinnerDevices = (Spinner)findViewById(R.id.spinnerDevices);
+		spinnerRotate = (Spinner)findViewById(R.id.spinnerRotate);
+		
+		List<String> arrRotate = new ArrayList<String>();
+		
+		arrRotate.add(context.getResources().getString(R.string.Rotate));
+		arrRotate.add("90");
+		arrRotate.add("180");
+		arrRotate.add("270");
+		
+		 ArrayAdapter<String> adapterRotate = new ArrayAdapter<String>(getContext(), android.R.layout.simple_list_item_1, arrRotate);
+		 spinnerRotate.setAdapter(adapterRotate);
+		 spinnerRotate.setSelection(0);
+		 
+		 spinnerRotate.setOnItemSelectedListener(new OnItemSelectedListener() {
+			    
+				@Override
+				public void onItemSelected(AdapterView<?> parent, View view,
+						int position, long id) {
+					
+					if (position > 0)
+					{
+						coorViewer.setRotate(position - 1);
+					}
+					
+					spinnerRotate.setSelection(0);
+				}
+
+				@Override
+				public void onNothingSelected(AdapterView<?> parent) {
+					// TODO Auto-generated method stub
+					
+				}
+
+			});
+		
 		
 		{
 			SpinnerAdapter adp = spinnerPorts.getAdapter();
@@ -128,15 +178,59 @@ public class SendDialod  extends Dialog  implements OnClickListener {
 		        } 
 		   	}
 		   	
+		   	spinnerDevices.setOnItemSelectedListener(new OnItemSelectedListener() {
+			    
+				@Override
+				public void onItemSelected(AdapterView<?> parent, View view,
+						int position, long id) {
+					
+					String currentDevice = (String) spinnerDevices.getAdapter().getItem(position);
+					SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getContext());
+					
+					if (sharedPrefs.contains(currentDevice + "_Rotate"))
+					{
+						int nRotate = sharedPrefs.getInt(currentDevice + "_Rotate", 0);
+						boolean bFlipVer = sharedPrefs.getBoolean(currentDevice + "_FlipVer", false);
+						boolean bFlipHoz = sharedPrefs.getBoolean(currentDevice + "_FlipHoz", false);
+						
+						coorViewer.setVal(nRotate, bFlipVer, bFlipHoz);
+						coorViewer.applyData();
+					}
+				}
+
+				@Override
+				public void onNothingSelected(AdapterView<?> parent) {
+					// TODO Auto-generated method stub
+					
+				}
+
+			});
+		   	
 	        ArrayAdapter<String> adapter = new ArrayAdapter<String>(getContext(), android.R.layout.simple_list_item_1, arrDevices);
 	        spinnerDevices.setAdapter(adapter);
 	        spinnerDevices.setSelection(sel);
+	        
+	        int nRotate = sharedPrefs.getInt(currentDevice + "_Rotate", 0);
+			boolean bFlipVer = sharedPrefs.getBoolean(currentDevice + "_FlipVer", false);
+			boolean bFlipHoz = sharedPrefs.getBoolean(currentDevice + "_FlipHoz", false);
+			
+			coorViewer.setVal(nRotate, bFlipVer, bFlipHoz);
 		}
 	}
 
 	@Override
 	public void onClick(View v) {
 		switch (v.getId()) {
+		
+		case R.id.imageButtonFlipVer:
+	    	onFlipVer(v);
+	    break;
+		case R.id.imageButtonFlipHoz:
+	    	onFlipHoz(v);
+	    break;
+		case R.id.buttonReset:
+	    	onReset(v);
+	    break;  
 	    case R.id.buttonSend:
 	    	onOK(v);
 	    break;  
@@ -147,6 +241,21 @@ public class SendDialod  extends Dialog  implements OnClickListener {
 	        break;
 	   }
 	}
+	
+	public void onFlipVer(View v) {
+	   	 
+		coorViewer.setFlipVer(); 
+   }
+	
+	public void onFlipHoz(View v) {
+	   	 
+		coorViewer.setFlipHor();
+   }
+	
+	public void onReset(View v) {
+	   	 
+		coorViewer.setReset();
+    }
 	
 	public void onCancel(View v) {
 	   	 
@@ -168,6 +277,9 @@ public class SendDialod  extends Dialog  implements OnClickListener {
 		
 		currentDevicesName = (String)adpDevices.getItem(curDevice);
 		
+		int nRotate = coorViewer.getRotate();
+		boolean bFlipVer = coorViewer.getFlipVer();
+		boolean bFlipHoz = coorViewer.getFlipHoz();
 		
 		SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getContext());
 		SharedPreferences.Editor editor = sharedPrefs.edit();
@@ -176,6 +288,10 @@ public class SendDialod  extends Dialog  implements OnClickListener {
 		{
 	    	editor.putString("currentDevice", currentDevicesName);
 	    	editor.putString("currentPort", currentPortsName);
+	    	
+	    	editor.putInt(currentDevicesName + "_Rotate", nRotate);
+	    	editor.putBoolean(currentDevicesName + "_FlipVer", bFlipVer);
+	    	editor.putBoolean(currentDevicesName + "_FlipHoz", bFlipHoz);
 		}
 		
 		editor.commit();

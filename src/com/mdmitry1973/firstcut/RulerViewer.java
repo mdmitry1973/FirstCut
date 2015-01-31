@@ -419,9 +419,6 @@ public class RulerViewer extends View implements ChooseUnitInterface
 	protected void  onMeasure (int widthMeasureSpec, int heightMeasureSpec)
 	{
 		super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-		
-		Log.d("onMeasure", "widthMeasureSpec=" + widthMeasureSpec);
-		Log.d("onMeasure", "heightMeasureSpec=" + heightMeasureSpec);
 	}
 }
 

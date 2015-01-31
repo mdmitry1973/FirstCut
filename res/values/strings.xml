@@ -94,4 +94,7 @@
 	<string name="LoadFontMsg">Loading font</string>
 	<string name="LoadFontTitle">Loading font</string>
 	<string name="Pro">%</string>
+	<string name="fliphor">Horizontal flip</string>
+	<string name="FlipVer">Vertical flip</string>
+	<string name="Reset">Reset</string>
 </resources>
