@@ -40,10 +40,9 @@ class SendDataTaskUSB extends SendDataTask
 	public SendDataTaskUSB(UsbDevice device,
 						ArrayList<CutObject> objects,
 						UsbManager manager,
-						ProgressDialog progressDialog,
 						MainActivity mainActivity) 
 	{
-		super(progressDialog);
+		super(mainActivity);
 		
 		this.device = device;
 		this.objects = objects;

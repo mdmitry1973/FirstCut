@@ -1066,7 +1066,7 @@ public class MainActivity extends Activity
 	                    	
 	                    	SendDataTaskUSB usbTask = new SendDataTaskUSB(device, pageViewer.getObjects(), 
 	                    											(UsbManager)getSystemService(Context.USB_SERVICE), 
-	                    											progressDialog, m_activity);
+	                    											m_activity);
 	                    	
 	                    	usbTask.setXDpi(getResources().getDisplayMetrics().xdpi);
 	                    	usbTask.setYDpi(getResources().getDisplayMetrics().ydpi);
@@ -1131,7 +1131,7 @@ public class MainActivity extends Activity
 		   	    	strName = arr[1];
 		   	    	offset++;
 			   	}
-	   			
+		   	   
 		   	    if (strType.startsWith("TYPE_TCPIP") == true)
 		   	    {
 		   	    	ConnectivityManager connMgr = (ConnectivityManager) 
@@ -1143,17 +1143,7 @@ public class MainActivity extends Activity
    	    				String strPortNumber = arr[1 + offset];
    			   			String strTextIP = arr[2 + offset];
    			   			
-   			   	    	progressDialog = new ProgressDialog(this);
-   		   				progressDialog.setTitle(getResources().getString(R.string.sending_data));
-   		   				progressDialog.setMessage(getResources().getString(R.string.please_wait));
-   		   				progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-   		   				progressDialog.setCanceledOnTouchOutside(false);
-   		   				progressDialog.setMax(100);
-   		   				progressDialog.setCancelable(false);
-   		   				progressDialog.show();
-   		   				
-   		   				SendDataTaskIPTCP tcpTask = new SendDataTaskIPTCP(strName, strPortNumber, strTextIP, pageViewer.getObjects(),
-   		   					progressDialog, m_activity);
+   		   				SendDataTaskIPTCP tcpTask = new SendDataTaskIPTCP(strName, strPortNumber, strTextIP, pageViewer.getObjects(), m_activity);
    		   				
    		   				tcpTask.setXDpi(getResources().getDisplayMetrics().xdpi);
    		   				tcpTask.setYDpi(getResources().getDisplayMetrics().ydpi);
@@ -1188,16 +1178,7 @@ public class MainActivity extends Activity
 	  	    		    	registerReceiver(mUsbReceiver, filter);
 
 	  	    		    	manager.requestPermission(device, mPermissionIntent);
-	  	    		    	
-	  	    		    	progressDialog = new ProgressDialog(this);
-	  			   			progressDialog.setTitle(getResources().getString(R.string.sending_data));
-	  			   			progressDialog.setMessage(getResources().getString(R.string.please_wait));
-	  			   			progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-	  			   			progressDialog.setCanceledOnTouchOutside(false);
-	  			   			progressDialog.setMax(100);
-	  			   			progressDialog.setCancelable(false);
-	  			   			progressDialog.show();
-	  	    		    	
+	  	    		    
 	  	    		    	break;
 	  	    		    }
 	  	    		}

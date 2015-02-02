@@ -3,6 +3,7 @@ package com.mdmitry1973.firstcut;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -11,6 +12,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.graphics.Matrix;
 import android.graphics.Path;
@@ -18,6 +21,7 @@ import android.graphics.PathMeasure;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.os.AsyncTask;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
@@ -28,10 +32,27 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 	double ydpi;
 	SharedPreferences sharedPrefs;
 	String data = "";
+	boolean bCancel = false;
 	
-	public SendDataTask(ProgressDialog progressDialog)
+	public SendDataTask(Context context)
 	{
-		this.progressDialog = progressDialog;
+		progressDialog = new ProgressDialog(context);
+		progressDialog.setTitle(context.getResources().getString(R.string.sending_data));
+		progressDialog.setMessage(context.getResources().getString(R.string.please_wait));
+		progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+		progressDialog.setCanceledOnTouchOutside(false);
+		progressDialog.setMax(100);
+		progressDialog.setCancelable(false);
+		
+		progressDialog.setButton(DialogInterface.BUTTON_NEUTRAL, context.getResources().getString(R.string.Cancel), new DialogInterface.OnClickListener() 
+		{
+		    @Override
+		    public void onClick(DialogInterface dialog, int which) {
+		    	bCancel = true;
+		  }
+		});
+		
+		progressDialog.show();
 	}
 	
 	public void setXDpi(double xdpi)
@@ -73,6 +94,42 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 			String initCommand="IN;";
 			String separator=";";
 			String currentDevice = sharedPrefs.getString("currentDevice", "HP-GL");
+			int nRotate = sharedPrefs.getInt(currentDevice + "_Rotate", 0);
+			boolean bFlipVer = sharedPrefs.getBoolean(currentDevice + "_FlipVer", false);
+			boolean bFlipHoz = sharedPrefs.getBoolean(currentDevice + "_FlipHoz", false);
+			float fPaperWidth = 11f;
+			float fPaperHeigh = 8.9f;
+			float fPaperWidthRes = 0;
+			float fPaperHeighRes = 0;
+			float fCenterXRes = 0;
+			float fCenterYRes = 0;
+			
+			{
+				int currentPaperIndex = sharedPrefs.getInt("currentPaperIndex", 0);
+				String strPapers = sharedPrefs.getString("Papers", "");
+				
+				if (!strPapers.isEmpty())
+			   	{
+					List<String> arrLines = new ArrayList<String>();
+				   	String []arrPaperLines = strPapers.split("\n");
+			   		
+			   		for (int i = 0; i < arrPaperLines.length; i++) 
+			   		{
+			   			if (i == currentPaperIndex)
+			   			{
+					   	    String []arr = arrPaperLines[i].split(";");
+					   	    
+					   	    if (arr.length > 2)
+					   	    {
+					   	    	fPaperWidth = Float.parseFloat(arr[1]);
+					   			fPaperHeigh = Float.parseFloat(arr[2]);
+					   	    }
+					   	    
+					   	    break;
+			   			}
+				   	}
+			   	}
+			}
 			
 		   	if (sharedPrefs.contains("Devices"))
 		   	{
@@ -109,6 +166,17 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 		   	int res = Integer.parseInt(resolution);
 		   	float xUnit = (float)(res/xdpi);
 	  		float yUnit = (float)(res/ydpi);
+	  		
+	  		fPaperWidthRes = fPaperWidth*(float)res;
+			fPaperHeighRes = fPaperHeigh*(float)res;
+			
+			fCenterXRes = fPaperWidthRes/2;
+			fCenterYRes = fPaperHeighRes/2;
+			
+			Matrix devMatrix = new Matrix();
+			
+			devMatrix.setRotate(nRotate, fCenterXRes, fCenterYRes);
+			devMatrix.postScale(bFlipHoz ? -1 : 1, bFlipVer ? -1 : 1, fCenterXRes, fCenterYRes);
 			
 			if (absoluteCommand.length() != 0)
 			{
@@ -126,17 +194,68 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 			
 			for (int j = 0; j < objects.size(); j++) 
 			{
+				if (bCancel)
+				{
+					break;
+				}
+				
 				CutObject path = objects.get(j);
 				
 				if (path.getType() == CutObject.CutObjectType.Box)
 				{
 					if (path.size() == 2)
 					{
+						RectF rect = new RectF(path.get(0).x*xUnit, path.get(0).y*yUnit, path.get(1).x*xUnit, path.get(1).y*yUnit);
+						
+						Matrix boxMatrix = new Matrix();
+						boxMatrix.setRotate(path.getDegree(), rect.centerX(), rect.centerY());
+						boxMatrix.mapRect(rect);
+						
+						devMatrix.mapRect(rect);
+						
+
+						data += String.format("%s%d,%d%s%s%d,%d,%d,%d,%d,%d,%d,%d,%d,%d%s", 
+								upCommand,
+								(int)(rect.left), (int)(rect.top),
+								separator,
+								downCommand,
+								(int)(rect.left), (int)(rect.top),
+								(int)(rect.right), (int)(rect.top),
+								(int)(rect.right), (int)(rect.bottom),
+								(int)(rect.left), (int)(rect.bottom),
+								(int)(rect.left), (int)(rect.top),
+								separator
+								);
+						
+						/*
 						PointF p1 = path.get(0);
 						PointF p3 = path.get(1);
 						
 						PointF p2 = new PointF(path.get(1).x, path.get(0).y);
 						PointF p4 = new PointF(path.get(0).x, path.get(1).y);
+						
+						float [] dst = new float[8];
+						float [] src = new float[8];
+						
+						src[0] = p1.x;
+						src[1] = p1.y;
+						src[2] = p2.x;
+						src[3] = p2.y;
+						src[4] = p3.x;
+						src[5] = p3.y;
+						src[6] = p4.x;
+						src[7] = p4.y;
+						
+						devMatrix.mapPoints(dst, src);
+						
+						p1.x = dst[0];
+						p1.y = dst[1];
+						p2.x = dst[2];
+						p2.y = dst[3];
+						p3.x = dst[4];
+						p3.y = dst[5];
+						p4.x = dst[6];
+						p4.y = dst[7];
 						
 						data += String.format("%s%d,%d%s%s%d,%d,%d,%d,%d,%d,%d,%d,%d,%d%s", 
 								upCommand,
@@ -150,6 +269,7 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 								(int)(p1.x*xUnit), (int)(p1.y*yUnit),
 								separator
 								);
+								*/
 					}
 				}
 				else
@@ -157,9 +277,8 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 					{
 						CutObjectArrow arrowObj = (CutObjectArrow)path;
 						Path pathArrow = new Path();
-						RectF rect = new RectF(path.get(0).x*xUnit, path.get(0).y*yUnit, 
-								path.get(1).x*xUnit, path.get(1).y*yUnit);
-						
+						RectF rect = new RectF(path.get(0).x*xUnit, path.get(0).y*yUnit, path.get(1).x*xUnit, path.get(1).y*yUnit);
+					
 						PointF centerCap = new PointF(rect.right, rect.top + (rect.height()/2));
 						
 						float capLength = rect.width() * arrowObj.getCapLength();
@@ -213,21 +332,28 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 							}
 						}
 						
+						float [] pts = new float[2];
+						
 						for(int n = 0; n < outputPoints.size(); n++)
 						{
+							pts[0] = outputPoints.get(n).x;
+							pts[1] = outputPoints.get(n).y;
+							
+							devMatrix.mapPoints(pts);
+							
 							if (n == 0)
 							{
 								data += String.format("%s%d,%d%s%s%d,%d", 
 										upCommand,
-										(int)outputPoints.get(n).x, (int)outputPoints.get(n).y,
+										(int)pts[0], (int)pts[1],
 										separator,
 										downCommand,
-										(int)outputPoints.get(n).x, (int)outputPoints.get(n).y);
+										(int)pts[0], (int)pts[1]);
 							}
 							else
 							{
 								data += String.format(",%d,%d", 
-										(int)outputPoints.get(n).x, (int)outputPoints.get(n).y);
+										(int)pts[0], (int)pts[1]);
 							}
 						}
 						
@@ -285,21 +411,28 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 								}
 							}
 							
+							float [] pts = new float[2];
+							
 							for(int n = 0; n < outputPoints.size(); n++)
 							{
+								pts[0] = outputPoints.get(n).x;
+								pts[1] = outputPoints.get(n).y;
+								
+								devMatrix.mapPoints(pts);
+								
 								if (n == 0)
 								{
 									data += String.format("%s%d,%d%s%s%d,%d", 
 											upCommand,
-											(int)outputPoints.get(n).x, (int)outputPoints.get(n).y,
+											(int)pts[0], (int)pts[1],
 											separator,
 											downCommand,
-											(int)outputPoints.get(n).x, (int)outputPoints.get(n).y);
+											(int)pts[0], (int)pts[1]);
 								}
 								else
 								{
 									data += String.format(",%d,%d", 
-											(int)outputPoints.get(n).x, (int)outputPoints.get(n).y);
+											(int)pts[0], (int)pts[1]);
 								}
 							}
 							
@@ -352,21 +485,28 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 							}
 						}
 						
+						float [] pts = new float[2];
+						
 						for(int n = 0; n < outputPoints.size(); n++)
 						{
+							pts[0] = outputPoints.get(n).x;
+							pts[1] = outputPoints.get(n).y;
+							
+							devMatrix.mapPoints(pts);
+							
 							if (n == 0)
 							{
 								data += String.format("%s%d,%d%s%s%d,%d", 
 										upCommand,
-										(int)outputPoints.get(n).x, (int)outputPoints.get(n).y,
+										(int)pts[0], (int)pts[1],
 										separator,
 										downCommand,
-										(int)outputPoints.get(n).x, (int)outputPoints.get(n).y);
+										(int)pts[0], (int)pts[1]);
 							}
 							else
 							{
 								data += String.format(",%d,%d", 
-										(int)outputPoints.get(n).x, (int)outputPoints.get(n).y);
+										(int)pts[0], (int)pts[1]);
 							}
 						}
 						
@@ -418,26 +558,38 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 									}
 								}
 							}
+							
+							float [] pts = new float[2];
 						
 							for(int n = 0; n < outputPoints.size(); n++)
 							{
+								pts[0] = outputPoints.get(n).x;
+								pts[1] = outputPoints.get(n).y;
+								
+								devMatrix.mapPoints(pts);
+								
 								if (n == 0)
 								{
 									data += String.format("%s%d,%d%s%s%d,%d", 
 											upCommand,
-											(int)outputPoints.get(n).x, (int)outputPoints.get(n).y,
+											(int)pts[0], (int)pts[1],
 											separator,
 											downCommand,
-											(int)outputPoints.get(n).x, (int)outputPoints.get(n).y);
+											(int)pts[0], (int)pts[1]);
 								}
 								else
 								{
 									data += String.format(",%d,%d", 
-											(int)outputPoints.get(n).x, (int)outputPoints.get(n).y);
+											(int)pts[0], (int)pts[1]);
 								}
 							}
 							
 							data += separator;
+							
+							if (bCancel)
+							{
+								break;
+							}
 						}
 						while(pathMeasure.nextContour());
 						
@@ -458,20 +610,27 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 				}
 				else
 				{
+					float [] pts = new float[2];
+					
 					for (int i = 0; i < path.size(); i++) 
 					{
 						PointF point = path.get(i);
 						
-						double x = point.x*xUnit;
-						double y = point.y*yUnit;
+						float x = point.x*xUnit;
+						float y = point.y*yUnit;
+						
+						pts[0] = x;
+						pts[1] = y;
+						
+						devMatrix.mapPoints(pts);
 						
 						if (i == 0)
 						{
-							data += String.format("%s%d,%d%s%s%s", upCommand, (int)y, (int)x, separator, downCommand, separator);
+							data += String.format("%s%d,%d%s%s%s", upCommand, (int)pts[0], (int)pts[1], separator, downCommand, separator);
 							data += String.format(downCommand);
 						}
 					   
-						data += String.format("%d,%d,", (int)y, (int)x);
+						data += String.format("%d,%d,", (int)pts[0], (int)pts[1]);
 					}
 					
 					data = data.substring(0, data.length() - 1);

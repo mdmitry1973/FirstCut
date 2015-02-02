@@ -46,10 +46,9 @@ class SendDataTaskIPTCP extends SendDataTask
 						String strPortNumber,
 						String strTextIP,
 						ArrayList<CutObject> objects,
-						ProgressDialog progressDialog,
 						MainActivity mainActivity) 
 	{
-		super(progressDialog);
+		super(mainActivity);
 		
 		this.strName = strName;
 		this.strPortNumber = strPortNumber;
