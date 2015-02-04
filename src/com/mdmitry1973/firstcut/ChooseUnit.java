@@ -38,6 +38,7 @@ public class ChooseUnit extends Dialog implements OnItemSelectedListener  {
 		spinnerUnit.setOnItemSelectedListener(this);
 	}
 	
+	@Override
 	public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) 
 	{
 		if (unitInit == true)

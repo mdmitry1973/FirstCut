@@ -389,6 +389,7 @@ public class ToolOptionDialogText extends Dialog
 		}
 	}
 	
+	@Override
 	public void onClick(View v) {       
 		switch (v.getId()) {
 	    case R.id.buttonOk:

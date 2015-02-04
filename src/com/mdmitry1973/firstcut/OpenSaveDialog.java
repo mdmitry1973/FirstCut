@@ -84,12 +84,14 @@ public class OpenSaveDialog extends Dialog  {
 		        			AlertDialog.Builder builder = new AlertDialog.Builder(v.getContext());
 		    	        	builder.setMessage(R.string.Warning4).setTitle(R.string.Warning).
 		    	        		setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-		    	                    public void onClick(DialogInterface dialogAlert, int id) {
+		    	                    @Override
+									public void onClick(DialogInterface dialogAlert, int id) {
 		    	                    	deligate.OpenSaveFinishDialog((dialog.type == OpenSaveType.Open) ? 1 : 2, "" + fileNameControl.getText());
 		    	                    	dialog.dismiss();
 		    	                    }
 		    	                }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-		    	                    public void onClick(DialogInterface dialog, int id) {
+		    	                    @Override
+									public void onClick(DialogInterface dialog, int id) {
 		    	                        
 		    	                    }
 		    	                });

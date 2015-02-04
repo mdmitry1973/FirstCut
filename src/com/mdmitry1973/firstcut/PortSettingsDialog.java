@@ -102,6 +102,7 @@ public class PortSettingsDialog extends Dialog implements OnClickListener{//Frag
 		}
 	}
 	
+	@Override
 	public void onClick(View v) {       
 		  switch (v.getId()) {
 		    case R.id.buttonOk:

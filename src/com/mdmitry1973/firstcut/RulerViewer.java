@@ -400,6 +400,7 @@ public class RulerViewer extends View implements ChooseUnitInterface
 		return true;
 	}
 	
+	@Override
 	public void UnitChanged()
 	{
 		SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getContext());

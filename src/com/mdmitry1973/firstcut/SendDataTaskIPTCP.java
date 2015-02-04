@@ -1,36 +1,16 @@
 package com.mdmitry1973.firstcut;
 
 import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Arrays;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-
-import android.app.ProgressDialog;
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.graphics.Matrix;
-import android.graphics.Path;
-import android.graphics.PathMeasure;
-import android.graphics.PointF;
-import android.graphics.RectF;
-import android.hardware.usb.UsbDevice;
-import android.hardware.usb.UsbDeviceConnection;
-import android.hardware.usb.UsbEndpoint;
-import android.hardware.usb.UsbInterface;
-import android.hardware.usb.UsbManager;
-import android.os.AsyncTask;
+import android.app.AlertDialog;
 import android.util.Log;
 
 class SendDataTaskIPTCP extends SendDataTask
@@ -38,9 +18,11 @@ class SendDataTaskIPTCP extends SendDataTask
 	public MainActivity mainActivity;
 	public OutputStream outpu = null;
 	public InputStream input = null;
+	public Socket socket = null;
 	public String strName;
 	public String strPortNumber;
 	public String strTextIP;
+	public String strErrorMessage = "";
 	
 	public SendDataTaskIPTCP(String strName,
 						String strPortNumber,
@@ -72,8 +54,19 @@ class SendDataTaskIPTCP extends SendDataTask
 	public void closePort()
 	{
 		try {
-			outpu.close();
-		} catch (IOException e) {
+			
+			if (outpu != null)
+			{
+				outpu.close();
+			}
+			
+			if (socket != null)
+			{
+				socket.close();
+			}
+		} 
+		catch (IOException e) 
+		{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -83,8 +76,6 @@ class SendDataTaskIPTCP extends SendDataTask
    protected Boolean doInBackground(String... urls) {
          
 			try {
-				Socket socket = null;
-				
 				
 				if (mainActivity.bEnableFilePort == true)
 				{
@@ -94,17 +85,26 @@ class SendDataTaskIPTCP extends SendDataTask
 				}
 				else
 				{
-					socket = new Socket(strTextIP, Integer.parseInt(strPortNumber));
+					InetSocketAddress remoteAddr = new InetSocketAddress(strTextIP, Integer.parseInt(strPortNumber));
 					
-					outpu = socket.getOutputStream();
-	  				input =	socket.getInputStream();
+					socket = new Socket();
+					
+					socket.connect(remoteAddr, 15*1000);
+					
+					if (socket.isConnected())
+					{
+						outpu = socket.getOutputStream();
+						input =	socket.getInputStream();
+					}
 				}
 				
-				send();
-				
-				if (socket != null)
+				if (socket.isConnected())
 				{
-					socket.close();
+					send();
+				}
+				else
+				{
+					strErrorMessage = mainActivity.getResources().getString(R.string.NoConnection);
 				}
 	            
 	        } catch (Exception e) {
@@ -115,7 +115,7 @@ class SendDataTaskIPTCP extends SendDataTask
 	           
 	        }
    	
-   	return true;
+			return true;
    }
 	
    // onPostExecute displays the results of the AsyncTask.
@@ -123,5 +123,12 @@ class SendDataTaskIPTCP extends SendDataTask
    protected void onPostExecute(Boolean result) {
    	progressDialog.dismiss();
    	
+   	if (!strErrorMessage.isEmpty())
+   	{
+   		AlertDialog.Builder builder = new AlertDialog.Builder(mainActivity);
+	    builder.setMessage(strErrorMessage).setTitle(R.string.app_name).setPositiveButton("Ok", null);
+	    AlertDialog dialog = builder.create();
+	    dialog.show();
+   	}
   }
 }

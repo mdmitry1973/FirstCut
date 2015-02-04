@@ -22,6 +22,7 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.Spinner;
 import android.widget.SpinnerAdapter;
@@ -35,6 +36,7 @@ public class SendDialod  extends Dialog  implements OnClickListener {
 	private Spinner spinnerRotate;
 	private ImageButton imageButtonFlipVer;
 	private ImageButton imageButtonFlipHor;
+	private CheckBox checkXY;
 	
 	public void setSendDialoginterface(SendDialoginterface licOk)
 	{
@@ -64,6 +66,8 @@ public class SendDialod  extends Dialog  implements OnClickListener {
 		spinnerPorts = (Spinner)findViewById(R.id.spinnerPorts);
 		spinnerDevices = (Spinner)findViewById(R.id.spinnerDevices);
 		spinnerRotate = (Spinner)findViewById(R.id.spinnerRotate);
+		
+		checkXY = (CheckBox)findViewById(R.id.checkBoxXY);
 		
 		List<String> arrRotate = new ArrayList<String>();
 		
@@ -213,8 +217,11 @@ public class SendDialod  extends Dialog  implements OnClickListener {
 	        int nRotate = sharedPrefs.getInt(currentDevice + "_Rotate", 0);
 			boolean bFlipVer = sharedPrefs.getBoolean(currentDevice + "_FlipVer", false);
 			boolean bFlipHoz = sharedPrefs.getBoolean(currentDevice + "_FlipHoz", false);
+			boolean bSwitchXY = sharedPrefs.getBoolean(currentDevice + "_SwitchXY", true);
 			
 			coorViewer.setVal(nRotate, bFlipVer, bFlipHoz);
+			
+			checkXY.setChecked(bSwitchXY);
 		}
 	}
 
@@ -280,6 +287,7 @@ public class SendDialod  extends Dialog  implements OnClickListener {
 		int nRotate = coorViewer.getRotate();
 		boolean bFlipVer = coorViewer.getFlipVer();
 		boolean bFlipHoz = coorViewer.getFlipHoz();
+		boolean bSwitchXY = checkXY.isChecked();
 		
 		SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getContext());
 		SharedPreferences.Editor editor = sharedPrefs.edit();
@@ -292,6 +300,7 @@ public class SendDialod  extends Dialog  implements OnClickListener {
 	    	editor.putInt(currentDevicesName + "_Rotate", nRotate);
 	    	editor.putBoolean(currentDevicesName + "_FlipVer", bFlipVer);
 	    	editor.putBoolean(currentDevicesName + "_FlipHoz", bFlipHoz);
+	    	editor.putBoolean(currentDevicesName + "_SwitchXY", bSwitchXY);
 		}
 		
 		editor.commit();

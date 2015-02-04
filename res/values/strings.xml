@@ -97,4 +97,6 @@
 	<string name="fliphor">Horizontal flip</string>
 	<string name="FlipVer">Vertical flip</string>
 	<string name="Reset">Reset</string>
+	<string name="SwitchXY">Swap X Y</string>
+	<string name="NoConnection">No connection.</string>
 </resources>

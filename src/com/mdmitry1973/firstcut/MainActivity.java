@@ -286,6 +286,7 @@ public class MainActivity extends Activity
 	private Map<String, TrueTypeFont> mapFonts = new HashMap<String, TrueTypeFont>();
 	public static ProgressDialog  progressLoadFontDialog = null;
 	
+	@Override
 	public TrueTypeFont getFont(String fontName)
 	{
 		return mapFonts.get(fontName);
@@ -392,6 +393,7 @@ public class MainActivity extends Activity
 		return null;
 	}
 	
+	@Override
 	public ArrayList<Path> glyphPaths(String fontName, String s, RectF r)
 	{
 		ArrayList<Path> arrPathes = new ArrayList<Path>();
@@ -446,6 +448,7 @@ public class MainActivity extends Activity
 	//	return getFont(currentFontName);
 	//}
 	
+	@Override
 	public DisplayMetrics getDisplayMetrics()
 	{
 		return getResources().getDisplayMetrics();
@@ -1048,6 +1051,7 @@ public class MainActivity extends Activity
 		
 	}
 	 
+	@Override
 	public void OnSendDialog()
 	{
 		sendData();
@@ -1055,7 +1059,8 @@ public class MainActivity extends Activity
 	
 	private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
 
-	    public void onReceive(Context context, Intent intent) {
+	    @Override
+		public void onReceive(Context context, Intent intent) {
 	        String action = intent.getAction();
 	        if (ACTION_USB_PERMISSION.equals(action)) {
 	            synchronized (this) {
@@ -1229,7 +1234,8 @@ public class MainActivity extends Activity
 	        	AlertDialog.Builder builder = new AlertDialog.Builder(this);
 	        	builder.setMessage("mdmitry1973@gmail.com").setTitle(R.string.action_about).setPositiveButton("Ok", null);
 	        	builder.setNeutralButton("Send log file", new DialogInterface.OnClickListener() {
-	                   public void onClick(DialogInterface dialog, int id) {
+	                   @Override
+					public void onClick(DialogInterface dialog, int id) {
 	                	   File logFle = new File(getExternalCacheDir(), "main.log");
 	                	   
 	                	   if (logFle.exists())
@@ -1921,12 +1927,14 @@ public class MainActivity extends Activity
 	    heightEdit.setText(String.format("%.2f", heightInch));
 	}
 	
+	@Override
 	public void ResetPaper()
 	{
 		pageViewer.ResetPaperSize();
 		pageViewer.RecalcSize();
 	}
 	
+	@Override
 	public void onPortManagerFinish()
 	{
 		SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
@@ -1939,6 +1947,7 @@ public class MainActivity extends Activity
 	   	}
 	}
 	
+	@Override
 	public void onToolOptionFinish()
 	{
 		if (nCurrentType == ToolType.Text)
@@ -1954,6 +1963,7 @@ public class MainActivity extends Activity
 		pageViewer.invalidate();
 	}
 	
+	@Override
 	public void onToolOptionApply()
 	{
 		if (nCurrentType == ToolType.Text)

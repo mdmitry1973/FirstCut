@@ -128,13 +128,15 @@ public class AndroidGlyph2D {
             if (point.onCurve && nextPoint1.onCurve) 
             {
                 path.lineTo(nextPoint1.x, nextPoint1.y);
+                lastPoint = new Point(nextPoint1.x, nextPoint1.y);
                 i++;
                 if (point.endOfContour || nextPoint1.endOfContour)
                 {
                     endOfContour = true;
                     path.close();
+                    //lastPoint = null;
                 }
-                lastPoint = new Point(nextPoint1.x, nextPoint1.y);
+                
                 continue;
             } 
             // quadratic bezier
@@ -144,19 +146,22 @@ public class AndroidGlyph2D {
                 {
                     // use the starting point as end point
                     path.quadTo(nextPoint1.x, nextPoint1.y, startingPoint.x, startingPoint.y);
+                    lastPoint = new Point(startingPoint.x, startingPoint.y);
                 }
                 else
                 {
                     path.quadTo(nextPoint1.x, nextPoint1.y, nextPoint2.x, nextPoint2.y);
+                    lastPoint = new Point(nextPoint2.x, nextPoint2.y);
                 }
                 if (nextPoint1.endOfContour || nextPoint2.endOfContour)
                 {
                     endOfContour = true;
                     path.close();
+                    //lastPoint = null;
                 }
                 i+=2;
                 lastCtrlPoint = nextPoint1;
-                lastPoint = new Point(nextPoint1.x, nextPoint1.y);
+                
                 continue;
             } 
             if (point.onCurve && !nextPoint1.onCurve && !nextPoint2.onCurve) 
@@ -165,15 +170,18 @@ public class AndroidGlyph2D {
                 int endPointX = midValue(nextPoint1.x, nextPoint2.x);
                 int endPointY = midValue(nextPoint1.y, nextPoint2.y);
                 path.quadTo(nextPoint1.x, nextPoint1.y, endPointX, endPointY);
+                lastPoint = new Point(nextPoint2.x, nextPoint2.y);
                 if (point.endOfContour || nextPoint1.endOfContour || nextPoint2.endOfContour)
                 {
                     path.quadTo(nextPoint2.x, nextPoint2.y, startingPoint.x, startingPoint.y);
+                    lastPoint = new Point(startingPoint.x, startingPoint.y);
                     endOfContour = true;
                     path.close();
+                    //lastPoint = null;
                 }
                 i+=2;
                 lastCtrlPoint = nextPoint1;
-                lastPoint = new Point(nextPoint1.x, nextPoint1.y);
+                
                 continue;
             } 
             if (!point.onCurve && !nextPoint1.onCurve) 
@@ -190,10 +198,12 @@ public class AndroidGlyph2D {
 	                int endPointX = midValue((int)lastEndPoint.x/*.getX()*/, nextPoint1.x);
 	                int endPointY = midValue((int)lastEndPoint.y/*.getY()*/, nextPoint1.y);
 	                path.quadTo(lastCtrlPoint.x, lastCtrlPoint.y, endPointX, endPointY);
+	                lastPoint = new Point(endPointX, endPointY);
 	                if (point.endOfContour || nextPoint1.endOfContour)
 	                {
 	                    endOfContour = true;
 	                    path.close();
+	                    //lastPoint = null;
 	                }
                 }
                 else
@@ -206,14 +216,16 @@ public class AndroidGlyph2D {
             if (!point.onCurve && nextPoint1.onCurve) 
             {
                 path.quadTo(point.x, point.y, nextPoint1.x, nextPoint1.y);
+                lastPoint = new Point(nextPoint1.x, nextPoint1.y);
                 if (point.endOfContour || nextPoint1.endOfContour)
                 {
                     endOfContour = true;
                     path.close();
+                    //lastPoint = null;
                 }
                 i++;
                 lastCtrlPoint = point;
-                lastPoint = new Point(point.x, point.y);
+               
                 continue;
             } 
             System.err.println("Unknown glyph command!!");

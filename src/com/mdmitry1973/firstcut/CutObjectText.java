@@ -52,6 +52,7 @@ public class CutObjectText   extends CutObject  {
 		this.fontMnager = fontMnager;
 	}
 	
+	@Override
 	public void setCurrentPrefs(SharedPreferences sharedPref)
 	{
 		super.setCurrentPrefs(sharedPref);
@@ -90,7 +91,7 @@ public class CutObjectText   extends CutObject  {
 		return fontName;
 	}
 	
-	public ArrayList<Path> getTextPathes(String str)
+	public ArrayList<Path> getTextPathes(String str, float xUnit, float yUnit)
 	{
 		ArrayList<Path> pathes = new ArrayList<Path>();
 		Matrix drawMatrix1 = new Matrix();

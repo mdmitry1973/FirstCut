@@ -45,6 +45,18 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content" >
+
+        <CheckBox
+            android:id="@+id/checkBoxXY"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/SwitchXY" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
         
         <com.mdmitry1973.firstcut.CoorViewer
                     android:id="@+id/coorViewe"

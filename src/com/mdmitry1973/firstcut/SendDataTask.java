@@ -33,6 +33,7 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 	SharedPreferences sharedPrefs;
 	String data = "";
 	boolean bCancel = false;
+	boolean bSwitchXY = true;
 	
 	public SendDataTask(Context context)
 	{
@@ -47,9 +48,10 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 		progressDialog.setButton(DialogInterface.BUTTON_NEUTRAL, context.getResources().getString(R.string.Cancel), new DialogInterface.OnClickListener() 
 		{
 		    @Override
-		    public void onClick(DialogInterface dialog, int which) {
+		    public void onClick(DialogInterface dialog, int which) 
+		    {
 		    	bCancel = true;
-		  }
+		    }
 		});
 		
 		progressDialog.show();
@@ -97,6 +99,7 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 			int nRotate = sharedPrefs.getInt(currentDevice + "_Rotate", 0);
 			boolean bFlipVer = sharedPrefs.getBoolean(currentDevice + "_FlipVer", false);
 			boolean bFlipHoz = sharedPrefs.getBoolean(currentDevice + "_FlipHoz", false);
+			bSwitchXY = sharedPrefs.getBoolean(currentDevice + "_SwitchXY", true);
 			float fPaperWidth = 11f;
 			float fPaperHeigh = 8.9f;
 			float fPaperWidthRes = 0;
@@ -213,6 +216,16 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 						
 						devMatrix.mapRect(rect);
 						
+						if (bSwitchXY)
+						{
+							float leftTemp = rect.left;
+							float rightTemp = rect.right;
+							
+							rect.left = rect.top;
+							rect.top = leftTemp;
+							rect.right = rect.bottom;
+							rect.bottom = rightTemp;
+						}
 
 						data += String.format("%s%d,%d%s%s%d,%d,%d,%d,%d,%d,%d,%d,%d,%d%s", 
 								upCommand,
@@ -341,6 +354,13 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 							
 							devMatrix.mapPoints(pts);
 							
+							if (bSwitchXY)
+							{
+								float temp = pts[0];
+								pts[0] = pts[1];
+								pts[1] = temp;
+							}
+							
 							if (n == 0)
 							{
 								data += String.format("%s%d,%d%s%s%d,%d", 
@@ -420,6 +440,13 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 								
 								devMatrix.mapPoints(pts);
 								
+								if (bSwitchXY)
+								{
+									float temp = pts[0];
+									pts[0] = pts[1];
+									pts[1] = temp;
+								}
+								
 								if (n == 0)
 								{
 									data += String.format("%s%d,%d%s%s%d,%d", 
@@ -494,6 +521,13 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 							
 							devMatrix.mapPoints(pts);
 							
+							if (bSwitchXY)
+							{
+								float temp = pts[0];
+								pts[0] = pts[1];
+								pts[1] = temp;
+							}
+							
 							if (n == 0)
 							{
 								data += String.format("%s%d,%d%s%s%d,%d", 
@@ -517,7 +551,7 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 				if (path.getType() == CutObject.CutObjectType.Text)
 				{
 					CutObjectText textObj = (CutObjectText)path;
-					ArrayList<Path> pathes = textObj.getTextPathes(textObj.getText());
+					ArrayList<Path> pathes = textObj.getTextPathes(textObj.getText(), xUnit, yUnit);
 					
 					nMaxSend = nMaxSend + (pathes.size() - 1);
 					
@@ -567,6 +601,13 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 								pts[1] = outputPoints.get(n).y;
 								
 								devMatrix.mapPoints(pts);
+								
+								if (bSwitchXY)
+								{
+									float temp = pts[0];
+									pts[0] = pts[1];
+									pts[1] = temp;
+								}
 								
 								if (n == 0)
 								{
@@ -623,6 +664,13 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 						pts[1] = y;
 						
 						devMatrix.mapPoints(pts);
+						
+						if (bSwitchXY)
+						{
+							float temp = pts[0];
+							pts[0] = pts[1];
+							pts[1] = temp;
+						}
 						
 						if (i == 0)
 						{
