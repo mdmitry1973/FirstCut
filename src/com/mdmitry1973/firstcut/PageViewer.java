@@ -429,7 +429,50 @@ public class PageViewer extends View
 						
 						if (path != null)
 						{
-							drawCanvas.drawPath(path, currentPaint);
+							if (false)
+							{
+								ArrayList<PointF> outputPoints = new ArrayList<PointF>();
+							
+								SendDataTask.pathToPoints(path, outputPoints);
+							
+
+								int tempColor = currentPaint.getColor();
+								int rr = 0;
+								int gg = 0; 
+								int bb = 0;
+								
+								for(int ii = 0; ii < outputPoints.size() - 1; ii++)
+								{
+									PointF p1 = outputPoints.get(ii);
+									PointF p2 = outputPoints.get(ii + 1);
+									
+									 currentPaint.setARGB(255, rr, gg, bb);
+									 rr = rr + 1;
+									
+									//drawCanvas.drawCircle(p1.x, p1.y, 15, currentPaint);
+									drawCanvas.drawLine(p1.x, p1.y, p2.x, p2.y, currentPaint);
+									
+									currentPaint.setColor(Color.YELLOW);
+									
+									drawCanvas.drawCircle(p1.x, p1.y, 15, currentPaint);
+								}
+								
+								currentPaint.setColor(Color.GREEN);
+								
+								PointF p11 = outputPoints.get(outputPoints.size() - 1);
+								drawCanvas.drawCircle(p11.x, p11.y, 30, currentPaint);
+								
+								currentPaint.setColor(Color.BLUE);
+								
+								PointF p22 = outputPoints.get(0);
+								drawCanvas.drawCircle(p22.x, p22.y, 50, currentPaint);
+								
+								currentPaint.setColor(tempColor);
+							}
+							else
+							{
+								drawCanvas.drawPath(path, currentPaint);
+							}
 						}
 					}
 				}

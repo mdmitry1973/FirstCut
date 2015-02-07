@@ -76,7 +76,7 @@ public class CutObjectLine   extends CutObject  {
 			}
 		}
 		
-		drawPath.close();
+		//drawPath.close();
 		
 		return drawPath;
 	}

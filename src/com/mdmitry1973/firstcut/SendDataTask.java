@@ -85,6 +85,150 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 		return true;
 	}
 	
+	static public boolean Contains(PointF from, PointF to, PointF pt, double epsilon)
+    {
+
+        double segmentLengthSqr = (to.x - from.x) * (to.x - from.x) + (to.y - from.y) * (to.y - from.y);
+        double r = ((pt.x - from.x) * (to.x - from.x) + (pt.y - from.y) * (to.y - from.y)) / segmentLengthSqr;
+        if(r<0 || r>1) return false;
+        double sl = ((from.y - pt.y) * (to.x - from.x) - (from.x - pt.x) * (to.y - from.y)) / Math.sqrt(segmentLengthSqr);
+        return -epsilon <= sl && sl <= epsilon;
+    }
+	
+	static public boolean isPointOnLine(PointF point1, PointF point2, PointF currPoint)
+	{
+		float dxc = currPoint.x - point1.x;
+		float dyc = currPoint.y - point1.y;
+
+		float dxl = point2.x - point1.x;
+		float dyl = point2.y - point1.y;
+
+		float cross = dxc * dyl - dyc * dxl;
+		
+		return cross == 0 ? true : false;//false : true;
+	}
+	
+	static public void pathToPoints(Path path, ArrayList<PointF> outputPoints)
+	{
+		PathMeasure pathMeasure = new PathMeasure(path, false);
+		PointF prePoint = new PointF(0, 0);
+		float pathLength = pathMeasure.getLength();
+		//float diffXY = 0;
+		PointF newPoint = new PointF(0, 0);
+		float[] pos = new float[2];
+		float[] tan = new float[2];
+		
+		for (float distance = 0; distance <= pathLength; distance = distance + 1) 
+		{
+			if (pathMeasure.getPosTan(distance, pos, tan))
+			{
+				newPoint.x = pos[0]; 
+				newPoint.y = pos[1];
+				
+				//if (distance == 0)
+				//{
+				//	prePoint.x = newPoint.x; 
+				//	prePoint.y = newPoint.y;
+					
+					outputPoints.add(new PointF(newPoint.x, newPoint.y));//new PointF((float)Math.round(newPoint.x*100)/100f, (float)Math.round(newPoint.y*100)/100f));
+					
+				//	diffXY = newPoint.x / newPoint.y;
+				//}
+				//else
+				//{
+					//if (Math.abs(newPoint.x - prePoint.x) >= 1.0f ||
+					//	Math.abs(newPoint.y - prePoint.y) >= 1.0f)
+					//{
+					//	float diffXYTemp = newPoint.x / newPoint.y;
+						
+					//	if (Math.abs(diffXYTemp - diffXY) > 0.01 || distance > pathLength - 2)
+					//	{
+					//		prePoint.x = newPoint.x; 
+					//		prePoint.y = newPoint.y;
+							
+							//PointF lastPoint = outputPoints.get(outputPoints.size() - 1);
+							
+							//if ((Math.abs(newPoint.x - lastPoint.x) < 0.02f ||
+							//	Math.abs(newPoint.y - lastPoint.y) < 0.02f) &&
+							///	outputPoints.size() > 2 &&
+							//	distance < pathLength - 10)
+							//{
+							//	outputPoints.remove(outputPoints.size() - 1);
+							//}
+							
+					//		outputPoints.add(new PointF(newPoint.x, newPoint.y));
+							
+					//		diffXY = diffXYTemp;
+					//	}
+					//}
+				//}
+			}
+		}
+		
+		PointF point1 = new PointF(0, 0); 
+		PointF point2 = new PointF(0, 0); 
+		PointF currPoint = new PointF(0, 0);
+		int setPointes = 0;
+		int index1 = 0;
+		int index2 = 0;
+		
+		for (int i = 0; i < outputPoints.size(); i++) 
+		{
+			if (setPointes == 0)
+			{
+				point1 = outputPoints.get(i);
+				setPointes++;
+				index1 = i;
+			}
+			else
+			if (setPointes == 1)
+			{
+				point2 = outputPoints.get(i);
+				setPointes++;
+				index2 = i;
+			}
+			else
+			{
+				currPoint = outputPoints.get(i);
+				
+				boolean cross = Contains(point1, currPoint, point2, 0.001);
+						
+						//isPointOnLine(point1, currPoint, point2);
+				
+				if (cross)//on line
+				{
+					point2 = currPoint;
+					index2 = i;
+				}
+				else
+				{
+					setPointes = 0;
+					
+					if (index2 - index1 > 3)
+					{
+						for(int k = index2 - 2; k > index1; k--)
+						{
+							outputPoints.remove(k);
+						}
+						
+						i = index1 + 2;
+					}
+					
+					index1 = 0;
+					index2 = 0;
+				}
+			}
+		}
+		
+		if (index2 - index1 > 3)
+		{
+			for(int k = index2 - 2; k > index1; k--)
+			{
+				outputPoints.remove(k);
+			}
+		}
+	}
+	
 	public Boolean send()
 	{
 		try {
@@ -239,50 +383,6 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 								(int)(rect.left), (int)(rect.top),
 								separator
 								);
-						
-						/*
-						PointF p1 = path.get(0);
-						PointF p3 = path.get(1);
-						
-						PointF p2 = new PointF(path.get(1).x, path.get(0).y);
-						PointF p4 = new PointF(path.get(0).x, path.get(1).y);
-						
-						float [] dst = new float[8];
-						float [] src = new float[8];
-						
-						src[0] = p1.x;
-						src[1] = p1.y;
-						src[2] = p2.x;
-						src[3] = p2.y;
-						src[4] = p3.x;
-						src[5] = p3.y;
-						src[6] = p4.x;
-						src[7] = p4.y;
-						
-						devMatrix.mapPoints(dst, src);
-						
-						p1.x = dst[0];
-						p1.y = dst[1];
-						p2.x = dst[2];
-						p2.y = dst[3];
-						p3.x = dst[4];
-						p3.y = dst[5];
-						p4.x = dst[6];
-						p4.y = dst[7];
-						
-						data += String.format("%s%d,%d%s%s%d,%d,%d,%d,%d,%d,%d,%d,%d,%d%s", 
-								upCommand,
-								(int)(p1.x*xUnit), (int)(p1.y*yUnit),
-								separator,
-								downCommand,
-								(int)(p1.x*xUnit), (int)(p1.y*yUnit),
-								(int)(p2.x*xUnit), (int)(p2.y*yUnit),
-								(int)(p3.x*xUnit), (int)(p3.y*yUnit),
-								(int)(p4.x*xUnit), (int)(p4.y*yUnit),
-								(int)(p1.x*xUnit), (int)(p1.y*yUnit),
-								separator
-								);
-								*/
 					}
 				}
 				else
@@ -313,13 +413,18 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 						arrowMatrix.setRotate(arrowObj.getDegree(), rect.centerX(), rect.centerY());
 						pathArrow.transform(arrowMatrix);
 						
+						ArrayList<PointF> outputPoints = new ArrayList<PointF>();
 						
+						pathToPoints(pathArrow, outputPoints);
+						
+						/*
 						PathMeasure pathMeasure = new PathMeasure(pathArrow, false);
 						ArrayList<PointF> outputPoints = new ArrayList<PointF>();
 						PointF prePoint = new PointF(0, 0);
 						float pathLength = pathMeasure.getLength();
+						float diffXY = 0;
 						
-						for (float distance = 0; distance < pathLength; distance = distance + 1) 
+						for (float distance = 0; distance <= pathLength; distance = distance + 1) 
 						{
 							float[] pos = new float[2];
 							float[] tan = new float[2];
@@ -332,18 +437,26 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 								{
 									prePoint = new PointF(newPoint.x, newPoint.y);
 									outputPoints.add(newPoint);
+									diffXY = newPoint.x / newPoint.y;
 								}
 								else
 								{
 									if (Math.abs(newPoint.x - prePoint.x) >= 1.0f ||
 										Math.abs(newPoint.y - prePoint.y) >= 1.0f)
 									{
-										prePoint = new PointF(newPoint.x, newPoint.y);
-										outputPoints.add(newPoint);
+										float diffXYTemp = newPoint.x / newPoint.y;
+										
+										if (Math.abs(diffXYTemp - diffXY) > 0.05 || distance > pathLength - 2)
+										{
+											prePoint = new PointF(newPoint.x, newPoint.y);
+											outputPoints.add(newPoint);
+											diffXY = diffXYTemp;
+										}
 									}
 								}
 							}
 						}
+						*/
 						
 						float [] pts = new float[2];
 						
@@ -400,6 +513,11 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 							starMatrix.setRotate(-19 + starObj.getDegree(), rect.centerX(), rect.centerY());
 							pathStar.transform(starMatrix);
 							
+							ArrayList<PointF> outputPoints = new ArrayList<PointF>();
+							
+							pathToPoints(pathStar, outputPoints);
+							
+							/*
 							PathMeasure pathMeasure = new PathMeasure(pathStar, false);
 							ArrayList<PointF> outputPoints = new ArrayList<PointF>();
 							PointF prePoint = new PointF(0, 0);
@@ -430,6 +548,7 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 									}
 								}
 							}
+							*/
 							
 							float [] pts = new float[2];
 							
@@ -481,6 +600,11 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 						pathCircle.addOval(rectCircle, Path.Direction.CCW);
 						pathCircle.close();
 						
+						ArrayList<PointF> outputPoints = new ArrayList<PointF>();
+						
+						pathToPoints(pathCircle, outputPoints);
+						
+						/*
 						PathMeasure pathMeasure = new PathMeasure(pathCircle, false);
 						ArrayList<PointF> outputPoints = new ArrayList<PointF>();
 						PointF prePoint = new PointF(0, 0);
@@ -511,6 +635,8 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 								}
 							}
 						}
+						
+						*/
 						
 						float [] pts = new float[2];
 						
@@ -558,15 +684,19 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 					for(int nn = 0; nn < pathes.size(); nn++)
 					{
 						Path textPath = pathes.get(nn);
+						
 						PathMeasure pathMeasure = new PathMeasure(textPath, false);
 						ArrayList<PointF> outputPoints = new ArrayList<PointF>();
 						PointF prePoint = new PointF(0, 0);
 						
 						do
 						{
+							float diffXY = 0;
+							float len = pathMeasure.getLength();
+							
 							outputPoints.clear();
 							
-							for (float distance = 0; distance < pathMeasure.getLength(); distance++) 
+							for (float distance = 0; distance < len; distance++) 
 							{
 								float[] pos = new float[2];
 								float[] tan = new float[2];
@@ -579,15 +709,22 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 									{
 										prePoint = new PointF(newPoint.x, newPoint.y);
 										outputPoints.add(newPoint);
+										diffXY = newPoint.x / newPoint.y;
 									}
 									else
 									{
+										
 										if (Math.abs(newPoint.x - prePoint.x) >= 1.0f ||
-											Math.abs(newPoint.y - prePoint.y) >= 1.0f)// ||
-											///distance == pathMeasure.getLength() - 1)
+											Math.abs(newPoint.y - prePoint.y) >= 1.0f)
 										{
-											prePoint = new PointF(newPoint.x, newPoint.y);
-											outputPoints.add(newPoint);
+											float diffXYTemp = newPoint.x / newPoint.y;
+											
+											if (Math.abs(diffXYTemp - diffXY) > 0.02 || distance > len - 2)
+											{
+												prePoint = new PointF(newPoint.x, newPoint.y);
+												outputPoints.add(newPoint);
+												diffXY = diffXYTemp;
+											}
 										}
 									}
 								}

@@ -54,7 +54,7 @@ public class CutObjectRect  extends CutObject  {
 			drawPath.addRect(rect, Direction.CW);
 			drawPath.transform(drawMatrix);
 			
-			drawPath.close();
+			//drawPath.close();
 		}
 		
 		return drawPath;
