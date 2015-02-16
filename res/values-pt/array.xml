@@ -9,4 +9,19 @@
         <item>TCP/IP</item>
         <item>USB</item>
     </string-array>   
+	<string-array name="hardCodeCutOption">
+        <item>HP-GL Graphtec Cut Fast</item>
+        <item>HP-GL Graphtec Cut Slow</item>
+        <item>HP-GL Graphtec Pen</item>
+        <item>HP-GL Mutoh Cut Fast</item>
+        <item>HP-GL Mutoh Cut Slow</item>
+        <item>HP-GL Mutoh Pen Fast</item>
+        <item>HP-GL Mutoh Pen Slow</item>
+        <item>HP-GL Roland Cut Fast</item>
+        <item>HP-GL Roland Cut Slow</item>
+        <item>HP-GL Roland Pen</item>
+        <item>GP-GL Cut Fast</item>
+        <item>GP-GL Cut Slow</item>
+        <item>GP-GL Cut Pen</item>
+    </string-array>   
 </resources>

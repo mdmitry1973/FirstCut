@@ -106,8 +106,8 @@
 	<string name="Option">Option</string>
 	<string name="OptionName">Option name:</string>
 	<string name="OptionValue">Option value:</string>
-	<string name="OptionWrning">Please change option set name, option set with this name already exist</string>
-	<string name="OptionWrning2">Please change option name, option with this name already exist</string>
+	<string name="OptionWrning">Please change the name of option set, option set with this name already exists</string>
+	<string name="OptionWrning2">Please change the name of option, option with this name already exists</string>
 	<string name="OptionWrning3">Option set name is empty</string>
 	<string name="OptionSetNotRemove">It is default preset that you cannot remove</string>
 </resources>

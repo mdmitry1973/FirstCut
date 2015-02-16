@@ -8,5 +8,20 @@
     <string-array name="listPortTypes">
         <item>TCP/IP</item>
         <item>USB</item>
-    </string-array>   
+    </string-array> 
+    <string-array name="hardCodeCutOption">
+        <item>HP-GL Graphtec быстро вырезать</item>
+        <item>HP-GL Graphtec медлено вырезать</item>
+        <item>HP-GL Graphtec перо</item>
+        <item>HP-GL Mutoh быстро вырезать</item>
+        <item>HP-GL Mutoh медлено вырезать</item>
+        <item>HP-GL Mutoh перо быстро</item>
+        <item>HP-GL Mutoh перо медлено</item>
+        <item>HP-GL Roland быстро вырезать</item>
+        <item>HP-GL Roland медлено вырезать</item>
+        <item>HP-GL Roland перо</item>
+        <item>GP-GL быстро вырезать</item>
+        <item>GP-GL медлено вырезать</item>
+        <item>GP-GL перо</item>
+    </string-array>      
 </resources>

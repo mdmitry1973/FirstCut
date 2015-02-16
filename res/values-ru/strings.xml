@@ -6,7 +6,7 @@
     <string name="action_exit">Выход</string>
     <string name="hello_world">Привет, мир!</string>
     <string name="Devices">Устройства</string>
-    <string name="DeviceManager">Диспетчер Устройств</string>
+    <string name="DeviceManager">Диспетчер устройств</string>
     <string name="Send">Послать</string>
     <string name="Current_Device">Текущее устройство</string>
     <string name="Remove">Удалить</string>
@@ -18,8 +18,8 @@
     <string name="IPaddress">IP-адрес</string>
     <string name="Cancel">Отменить</string>
     <string name="OK">Да</string>
-	<string name="PortManager">Порт-менеджер</string>
-	<string name="PaperManager">Менеджер бумаги</string>
+	<string name="PortManager">Диспетчер порта</string>
+	<string name="PaperManager">Диспетчер бумаги</string>
 	<string name="PortSettings">Настройки порта</string>
 	<string name="sending_data">Отправка данных</string>
 	<string name="please_wait">Пожалуйста, подождите</string>
@@ -98,4 +98,15 @@
 	<string name="Reset">Сброс</string>
 	<string name="SwitchXY">Обмен X Y</string>
 	<string name="NoConnection">Нет связи.</string>
+	<string name="OptionSets">Комплект параметров:</string>
+	<string name="Value">Value:</string>
+	<string name="CutOptionsManager">Диспетчер параметров вырезания</string>
+	<string name="CutOptions">Параметры вырезания</string>
+	<string name="Option">Параметр</string>
+	<string name="OptionName">Имя параметра:</string>
+	<string name="OptionValue">Переменая параметра:</string>
+	<string name="OptionWrning">Пожалуйста, измените имя комплекта параметров, комплект параметров с таким именем уже существует</string>
+	<string name="OptionWrning2">Пожалуйста, измените имя параметра, параметор с таким именем уже существует</string>
+	<string name="OptionWrning3">Имя комплекта параметров пусто</string>
+	<string name="OptionSetNotRemove">Это по умолчанию настройку, которую вы не можете удалить</string>
 </resources>

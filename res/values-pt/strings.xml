@@ -98,4 +98,15 @@
 	<string name="Reset">Restabelecer</string>
 	<string name="SwitchXY">Trocar X Y</string>
 	<string name="NoConnection">Sem conexão.</string>
+ 	<string name="OptionSets">Conjuntos de opções:</string>
+	<string name="Value">Valor:</string>
+	<string name="CutOptionsManager">Opções Cut gerente</string>
+	<string name="CutOptions">Оpções de corte</string>
+	<string name="Option">Оpção</string>
+	<string name="OptionName">Nome da opção:</string>
+	<string name="OptionValue">O valor da opção:</string>
+	<string name="OptionWrning">Por favor, altere o nome do conjunto de opções, opção definida com este nome já existe</string>
+	<string name="OptionWrning2">Por favor, altere o nome da opção, a opção com este nome já existe</string>
+	<string name="OptionWrning3">Opção nome do conjunto é vazio</string>
+	<string name="OptionSetNotRemove">É padrão predefinido que você não pode remover</string>
 </resources>
