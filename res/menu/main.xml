@@ -18,6 +18,12 @@
         android:showAsAction="never"
         android:title="@string/Paper"/>  
         
+     <item
+        android:id="@+id/action_cut_options_manager"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="@string/CutOptionsManager"/>  
+        
     <item
         android:id="@+id/action_settings"
         android:orderInCategory="100"

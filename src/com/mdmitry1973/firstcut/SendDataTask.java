@@ -34,9 +34,26 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 	String data = "";
 	boolean bCancel = false;
 	boolean bSwitchXY = true;
+	Context context;
+	
+	public static String [] strHardcodeCutOptions = 
+		{"<CutOptions name=\"HP-GL Graphtec Cut Fast\" ><option name=\"Speed\" val=\"VS15\" /></CutOptions>", 
+		 "<CutOptions name=\"HP-GL Graphtec Cut Slow\" ><option name=\"Speed\" val=\"VS10\" /></CutOptions>", 
+		 "<CutOptions name=\"HP-GL Graphtec Pen\" ><option name=\"Tool\" val=\"SP1\" /><option name=\"Speed\" val=\"VS15\" /></CutOptions>",
+		 "<CutOptions name=\"HP-GL Mutoh Cut Fast\" ><option name=\"Speed\" val=\"VS60\" /><option name=\"Acceleration\" val=\"AS1.5\" /></CutOptions>",
+		 "<CutOptions name=\"HP-GL Mutoh Cut Slow\" ><option name=\"Speed\" val=\"VS20\" /><option name=\"Acceleration\" val=\"AS1.5\" /></CutOptions>",
+		 "<CutOptions name=\"HP-GL Mutoh Pen Fast\" ><option name=\"Speed\" val=\"VS90\" /><option name=\"Acceleration\" val=\"AS2\" /></CutOptions>",
+		 "<CutOptions name=\"HP-GL Mutoh Pen Slow\" ><option name=\"Speed\" val=\"VS45\" /><option name=\"Acceleration\" val=\"AS2\" /></CutOptions>",
+		 "<CutOptions name=\"HP-GL Roland Cut Fast\" ><option name=\"Speed\" val=\"VS30\" /><option name=\"Acceleration\" val=\"AS2\" /></CutOptions>",
+		 "<CutOptions name=\"HP-GL Roland Cut Slow\" ><option name=\"Speed\" val=\"VS20\" /><option name=\"Acceleration\" val=\"AS2\" /></CutOptions>",
+		 "<CutOptions name=\"HP-GL Roland Pen\" ><option name=\"Speed\" val=\"VS40\" /><option name=\"Acceleration\" val=\"AS4\" /></CutOptions>",
+		 "<CutOptions name=\"GP-GL Cut Fast\" ><option name=\"Speed\" val=\"!7\" /></CutOptions>",
+		 "<CutOptions name=\"GP-GL Cut Slow\" ><option name=\"Speed\" val=\"!3\" /></CutOptions>",
+		 "<CutOptions name=\"GP-GL Cut Pen\" ><option name=\"Speed\" val=\"!10\" /></CutOptions>"};
 	
 	public SendDataTask(Context context)
 	{
+		this.context = context;
 		progressDialog = new ProgressDialog(context);
 		progressDialog.setTitle(context.getResources().getString(R.string.sending_data));
 		progressDialog.setMessage(context.getResources().getString(R.string.please_wait));
@@ -113,7 +130,6 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 		PathMeasure pathMeasure = new PathMeasure(path, false);
 		PointF prePoint = new PointF(0, 0);
 		float pathLength = pathMeasure.getLength();
-		//float diffXY = 0;
 		PointF newPoint = new PointF(0, 0);
 		float[] pos = new float[2];
 		float[] tan = new float[2];
@@ -125,43 +141,7 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 				newPoint.x = pos[0]; 
 				newPoint.y = pos[1];
 				
-				//if (distance == 0)
-				//{
-				//	prePoint.x = newPoint.x; 
-				//	prePoint.y = newPoint.y;
-					
-					outputPoints.add(new PointF(newPoint.x, newPoint.y));//new PointF((float)Math.round(newPoint.x*100)/100f, (float)Math.round(newPoint.y*100)/100f));
-					
-				//	diffXY = newPoint.x / newPoint.y;
-				//}
-				//else
-				//{
-					//if (Math.abs(newPoint.x - prePoint.x) >= 1.0f ||
-					//	Math.abs(newPoint.y - prePoint.y) >= 1.0f)
-					//{
-					//	float diffXYTemp = newPoint.x / newPoint.y;
-						
-					//	if (Math.abs(diffXYTemp - diffXY) > 0.01 || distance > pathLength - 2)
-					//	{
-					//		prePoint.x = newPoint.x; 
-					//		prePoint.y = newPoint.y;
-							
-							//PointF lastPoint = outputPoints.get(outputPoints.size() - 1);
-							
-							//if ((Math.abs(newPoint.x - lastPoint.x) < 0.02f ||
-							//	Math.abs(newPoint.y - lastPoint.y) < 0.02f) &&
-							///	outputPoints.size() > 2 &&
-							//	distance < pathLength - 10)
-							//{
-							//	outputPoints.remove(outputPoints.size() - 1);
-							//}
-							
-					//		outputPoints.add(new PointF(newPoint.x, newPoint.y));
-							
-					//		diffXY = diffXYTemp;
-					//	}
-					//}
-				//}
+				outputPoints.add(new PointF(newPoint.x, newPoint.y));
 			}
 		}
 		
@@ -244,12 +224,104 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 			boolean bFlipVer = sharedPrefs.getBoolean(currentDevice + "_FlipVer", false);
 			boolean bFlipHoz = sharedPrefs.getBoolean(currentDevice + "_FlipHoz", false);
 			bSwitchXY = sharedPrefs.getBoolean(currentDevice + "_SwitchXY", true);
+			
 			float fPaperWidth = 11f;
 			float fPaperHeigh = 8.9f;
 			float fPaperWidthRes = 0;
 			float fPaperHeighRes = 0;
 			float fCenterXRes = 0;
 			float fCenterYRes = 0;
+			
+			String strNone = context.getResources().getString(R.string.None);
+			String strCutOptions = sharedPrefs.getString("currentCutOptions", strNone);
+			String customOptions = sharedPrefs.getString("customOptions", "");
+			DocumentBuilderFactory xmlFactory = DocumentBuilderFactory.newInstance();
+			List<String> arrayOptions = new ArrayList<String>();
+			
+			if (strCutOptions.compareTo(strNone) != 0)
+			{
+				for(int n = 0; n < SendDataTask.strHardcodeCutOptions.length; n++)
+				{
+					try {
+						DocumentBuilder xmlBuilder = xmlFactory.newDocumentBuilder();
+						InputStream stream = new ByteArrayInputStream(SendDataTask.strHardcodeCutOptions[n].getBytes("UTF-8"));
+						
+						Document documentCurrent = xmlBuilder.parse(stream);
+						Element elRoot = documentCurrent.getDocumentElement();
+						
+						String name = elRoot.getAttribute("name");
+						
+						if (strCutOptions.compareTo(name) == 0)
+						{
+							Element elOptions = (Element)elRoot.getFirstChild();
+							
+							while(elOptions != null)
+							{
+								//String nameOp = elOptions.getAttribute("name");
+								String valOp = elOptions.getAttribute("val");
+								
+								arrayOptions.add(valOp);
+								
+								elOptions = (Element)elOptions.getNextSibling();
+							}
+							
+							break;
+						}
+					} 
+			   		catch (Exception e) 
+			   		{
+			        	Log.v("CutOptionsManagerDialog", "Error" + e);
+			        } 
+				}
+				
+				if (arrayOptions.size() == 0)
+				{
+					/*
+					 * <Root>
+					 * <CutOptions name=\"HP-GL Graphtec Cut Fast\" ><option name=\"Speed\" val=\"VS15\" /></CutOptions>
+					 * </Root>
+					 * 
+					 */
+					
+					try {
+						DocumentBuilder xmlBuilder = xmlFactory.newDocumentBuilder();
+						InputStream stream = new ByteArrayInputStream(customOptions.getBytes("UTF-8"));
+						
+						Document documentCurrent = xmlBuilder.parse(stream);
+						Element elRoot = documentCurrent.getDocumentElement();
+						
+						Element elOption = (Element)elRoot.getFirstChild();
+						
+						while(elOption != null)
+						{
+							String name = elOption.getAttribute("name");
+							
+							if (strCutOptions.compareTo(name) == 0)
+							{
+								Element elOptions = (Element)elOption.getFirstChild();
+								
+								while(elOptions != null)
+								{
+									//String nameOp = elOptions.getAttribute("name");
+									String valOp = elOptions.getAttribute("val");
+									
+									arrayOptions.add(valOp);
+									
+									elOptions = (Element)elOptions.getNextSibling();
+								}
+								
+								break;
+							}
+							
+							elOption = (Element)elOption.getNextSibling();
+						}
+					} 
+			   		catch (Exception e) 
+			   		{
+			        	Log.v("CutOptionsManagerDialog", "Error" + e);
+			        } 
+				}
+			}
 			
 			{
 				int currentPaperIndex = sharedPrefs.getInt("currentPaperIndex", 0);
@@ -280,8 +352,7 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 			
 		   	if (sharedPrefs.contains("Devices"))
 		   	{
-		   		DocumentBuilderFactory xmlFactory = DocumentBuilderFactory.newInstance();
-				DocumentBuilder xmlBuilder = xmlFactory.newDocumentBuilder();
+		   		DocumentBuilder xmlBuilder = xmlFactory.newDocumentBuilder();
 				InputStream stream = new ByteArrayInputStream(sharedPrefs.getString("Devices", "").getBytes("UTF-8"));
 				
 				Document documentCurrent = xmlBuilder.parse(stream);
@@ -332,6 +403,11 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 			else
 			{
 				data = initCommand;
+			}
+			
+			for(int j = 0; j < arrayOptions.size(); j++)
+			{
+				data = data + arrayOptions.get(j) + separator;
 			}
 			
 			data = data + upCommand + separator;
@@ -417,47 +493,6 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 						
 						pathToPoints(pathArrow, outputPoints);
 						
-						/*
-						PathMeasure pathMeasure = new PathMeasure(pathArrow, false);
-						ArrayList<PointF> outputPoints = new ArrayList<PointF>();
-						PointF prePoint = new PointF(0, 0);
-						float pathLength = pathMeasure.getLength();
-						float diffXY = 0;
-						
-						for (float distance = 0; distance <= pathLength; distance = distance + 1) 
-						{
-							float[] pos = new float[2];
-							float[] tan = new float[2];
-							
-							if (pathMeasure.getPosTan(distance, pos, tan))
-							{
-								PointF newPoint = new PointF(pos[0], pos[1]);
-								
-								if (distance == 0)
-								{
-									prePoint = new PointF(newPoint.x, newPoint.y);
-									outputPoints.add(newPoint);
-									diffXY = newPoint.x / newPoint.y;
-								}
-								else
-								{
-									if (Math.abs(newPoint.x - prePoint.x) >= 1.0f ||
-										Math.abs(newPoint.y - prePoint.y) >= 1.0f)
-									{
-										float diffXYTemp = newPoint.x / newPoint.y;
-										
-										if (Math.abs(diffXYTemp - diffXY) > 0.05 || distance > pathLength - 2)
-										{
-											prePoint = new PointF(newPoint.x, newPoint.y);
-											outputPoints.add(newPoint);
-											diffXY = diffXYTemp;
-										}
-									}
-								}
-							}
-						}
-						*/
-						
 						float [] pts = new float[2];
 						
 						for(int n = 0; n < outputPoints.size(); n++)
@@ -517,39 +552,6 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 							
 							pathToPoints(pathStar, outputPoints);
 							
-							/*
-							PathMeasure pathMeasure = new PathMeasure(pathStar, false);
-							ArrayList<PointF> outputPoints = new ArrayList<PointF>();
-							PointF prePoint = new PointF(0, 0);
-							float pathLength = pathMeasure.getLength();
-							
-							for (float distance = 0; distance < pathLength; distance = distance + 1) 
-							{
-								float[] pos = new float[2];
-								float[] tan = new float[2];
-								
-								if (pathMeasure.getPosTan(distance, pos, tan))
-								{
-									PointF newPoint = new PointF(pos[0], pos[1]);
-									
-									if (distance == 0)
-									{
-										prePoint = new PointF(newPoint.x, newPoint.y);
-										outputPoints.add(newPoint);
-									}
-									else
-									{
-										if (Math.abs(newPoint.x - prePoint.x) >= 1.0f ||
-											Math.abs(newPoint.y - prePoint.y) >= 1.0f)
-										{
-											prePoint = new PointF(newPoint.x, newPoint.y);
-											outputPoints.add(newPoint);
-										}
-									}
-								}
-							}
-							*/
-							
 							float [] pts = new float[2];
 							
 							for(int n = 0; n < outputPoints.size(); n++)
@@ -603,40 +605,6 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 						ArrayList<PointF> outputPoints = new ArrayList<PointF>();
 						
 						pathToPoints(pathCircle, outputPoints);
-						
-						/*
-						PathMeasure pathMeasure = new PathMeasure(pathCircle, false);
-						ArrayList<PointF> outputPoints = new ArrayList<PointF>();
-						PointF prePoint = new PointF(0, 0);
-						
-						for (float distance = 0; distance < pathMeasure.getLength(); distance++) 
-						{
-							float[] pos = new float[2];
-							float[] tan = new float[2];
-							
-							if (pathMeasure.getPosTan(distance, pos, tan))
-							{
-								PointF newPoint = new PointF(pos[0], pos[1]);
-								
-								if (distance == 0)
-								{
-									prePoint = new PointF(newPoint.x, newPoint.y);
-									outputPoints.add(newPoint);
-								}
-								else
-								{
-									if (Math.abs(newPoint.x - prePoint.x) >= 1.0f ||
-										Math.abs(newPoint.y - prePoint.y) >= 1.0f)// ||
-										///distance == pathMeasure.getLength() - 1)
-									{
-										prePoint = new PointF(newPoint.x, newPoint.y);
-										outputPoints.add(newPoint);
-									}
-								}
-							}
-						}
-						
-						*/
 						
 						float [] pts = new float[2];
 						

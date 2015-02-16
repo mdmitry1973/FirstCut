@@ -110,7 +110,8 @@ public class MainActivity extends Activity
 					PaperManagerDialog.PaperManagerDialogInterface,
 					PortManagerDialog.PortManagerInterface,
 					ToolOptionInterface,
-					FontManagerInterface {
+					FontManagerInterface,
+					CutOptionsManagerDialog.CutOptionsDialogInterface {
 	
 	public ProgressDialog progressDialog;
 	
@@ -1287,6 +1288,14 @@ public class MainActivity extends Activity
 	        }
 	        return true;
 	        
+	        case R.id.action_cut_options_manager:
+	        {
+	        	CutOptionsManagerDialog dialog = new CutOptionsManagerDialog(this);
+	        	dialog.SetCutOptionsInterface(this);
+	    		dialog.show();
+	        }
+	        return true;
+	        
 	        case R.id.action_settings:
 	        {
 	        	SettingsDialog dialog = new SettingsDialog(this);
@@ -1932,6 +1941,11 @@ public class MainActivity extends Activity
 	{
 		pageViewer.ResetPaperSize();
 		pageViewer.RecalcSize();
+	}
+	
+	public void SetOptions()
+	{
+		
 	}
 	
 	@Override

@@ -99,4 +99,15 @@
 	<string name="Reset">Reset</string>
 	<string name="SwitchXY">Swap X Y</string>
 	<string name="NoConnection">No connection.</string>
+	<string name="OptionSets">Option sets:</string>
+	<string name="Value">Value:</string>
+	<string name="CutOptionsManager">Cut options manager</string>
+	<string name="CutOptions">Cut options</string>
+	<string name="Option">Option</string>
+	<string name="OptionName">Option name:</string>
+	<string name="OptionValue">Option value:</string>
+	<string name="OptionWrning">Please change option set name, option set with this name already exist</string>
+	<string name="OptionWrning2">Please change option name, option with this name already exist</string>
+	<string name="OptionWrning3">Option set name is empty</string>
+	<string name="OptionSetNotRemove">It is default preset that you cannot remove</string>
 </resources>

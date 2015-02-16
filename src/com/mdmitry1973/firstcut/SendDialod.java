@@ -3,6 +3,7 @@ package com.mdmitry1973.firstcut;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -34,6 +35,7 @@ public class SendDialod  extends Dialog  implements OnClickListener {
 	private SendDialoginterface licOk;
 	private CoorViewer coorViewer;
 	private Spinner spinnerRotate;
+	private Spinner spinnerCutOptions;
 	private ImageButton imageButtonFlipVer;
 	private ImageButton imageButtonFlipHor;
 	private CheckBox checkXY;
@@ -66,8 +68,83 @@ public class SendDialod  extends Dialog  implements OnClickListener {
 		spinnerPorts = (Spinner)findViewById(R.id.spinnerPorts);
 		spinnerDevices = (Spinner)findViewById(R.id.spinnerDevices);
 		spinnerRotate = (Spinner)findViewById(R.id.spinnerRotate);
+		spinnerCutOptions = (Spinner)findViewById(R.id.spinnerCutoptions);
 		
 		checkXY = (CheckBox)findViewById(R.id.checkBoxXY);
+		
+		String strCutOptions = sharedPrefs.getString("currentCutOptions", getContext().getResources().getString(R.string.None));
+		String customOptions = sharedPrefs.getString("customOptions", "");
+		int selCutOptions = 0;
+		
+		List<String> arrayCutOptionsSt = Arrays.asList(getContext().getResources().getStringArray(R.array.hardCodeCutOption));//new ArrayList<String>();
+		List<String> arrayCutOptions = new ArrayList<String>(arrayCutOptionsSt);
+		DocumentBuilderFactory xmlFactory = DocumentBuilderFactory.newInstance();
+		
+		arrayCutOptions.add(0, getContext().getResources().getString(R.string.None));
+		
+		for(int n = 0; n < SendDataTask.strHardcodeCutOptions.length; n++)
+		{
+			try {
+				DocumentBuilder xmlBuilder = xmlFactory.newDocumentBuilder();
+				InputStream stream = new ByteArrayInputStream(SendDataTask.strHardcodeCutOptions[n].getBytes("UTF-8"));
+				
+				Document documentCurrent = xmlBuilder.parse(stream);
+				Element elRoot = documentCurrent.getDocumentElement();
+				
+				String name = elRoot.getAttribute("name");
+				
+				if (strCutOptions.compareTo(name) == 0)
+				{
+					selCutOptions = arrayCutOptions.size() - 1;
+				}
+			} 
+	   		catch (Exception e) 
+	   		{
+	        	Log.v("CutOptionsManagerDialog", "Error" + e);
+	        } 
+		}
+		
+		if (!customOptions.isEmpty())
+		{
+			/*
+			 * <Root>
+			 * <CutOptions name=\"HP-GL Graphtec Cut Fast\" ><option name=\"Speed\" val=\"VS15\" /></CutOptions>
+			 * </Root>
+			 * 
+			 */
+			
+			try {
+				DocumentBuilder xmlBuilder = xmlFactory.newDocumentBuilder();
+				InputStream stream = new ByteArrayInputStream(customOptions.getBytes("UTF-8"));
+				
+				Document documentCurrent = xmlBuilder.parse(stream);
+				Element elRoot = documentCurrent.getDocumentElement();
+				
+				Element elOption = (Element)elRoot.getFirstChild();
+				
+				while(elOption != null)
+				{
+					String name = elOption.getAttribute("name");
+					
+					arrayCutOptions.add(name);
+					
+					if (strCutOptions.compareTo(name) == 0)
+					{
+						selCutOptions = arrayCutOptions.size() - 1;
+					}
+					
+					elOption = (Element)elOption.getNextSibling();
+				}
+			} 
+	   		catch (Exception e) 
+	   		{
+	        	Log.v("CutOptionsManagerDialog", "Error" + e);
+	        } 
+		}
+		
+		ArrayAdapter<String> adapterCutOptions = new ArrayAdapter<String>(getContext(), android.R.layout.simple_list_item_1, arrayCutOptions);
+		spinnerCutOptions.setAdapter(adapterCutOptions);
+		spinnerCutOptions.setSelection(selCutOptions);
 		
 		List<String> arrRotate = new ArrayList<String>();
 		
@@ -152,8 +229,6 @@ public class SendDialod  extends Dialog  implements OnClickListener {
 		   	if (sharedPrefs.contains("Devices"))
 		   	{
 		   		try {
-		   			
-			   		DocumentBuilderFactory xmlFactory = DocumentBuilderFactory.newInstance();
 					DocumentBuilder xmlBuilder = xmlFactory.newDocumentBuilder();
 					InputStream stream = new ByteArrayInputStream(sharedPrefs.getString("Devices", "").getBytes("UTF-8"));
 					
@@ -273,6 +348,11 @@ public class SendDialod  extends Dialog  implements OnClickListener {
 		
 		int curPort = spinnerPorts.getSelectedItemPosition();
 		int curDevice = spinnerDevices.getSelectedItemPosition();
+		int curCutOptions = spinnerCutOptions.getSelectedItemPosition();
+		SpinnerAdapter adpCutOptions = spinnerCutOptions.getAdapter();
+		String strCutOptionsSel = getContext().getResources().getString(R.string.None);
+		
+		strCutOptionsSel = (String)adpCutOptions.getItem(curCutOptions);
 		
 		SpinnerAdapter adpPorts = spinnerPorts.getAdapter();
 		String currentPortsName = "";
@@ -301,6 +381,7 @@ public class SendDialod  extends Dialog  implements OnClickListener {
 	    	editor.putBoolean(currentDevicesName + "_FlipVer", bFlipVer);
 	    	editor.putBoolean(currentDevicesName + "_FlipHoz", bFlipHoz);
 	    	editor.putBoolean(currentDevicesName + "_SwitchXY", bSwitchXY);
+	    	editor.putString("currentCutOptions", strCutOptionsSel);
 		}
 		
 		editor.commit();

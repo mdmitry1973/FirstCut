@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="pref_Unit">
+        <item>Polegada</item>
+        <item>Milímetro</item>
+        <item>Centímetro</item>
+    </string-array>    
+    <string-array name="listPortTypes">
+        <item>TCP/IP</item>
+        <item>USB</item>
+    </string-array>   
+</resources>

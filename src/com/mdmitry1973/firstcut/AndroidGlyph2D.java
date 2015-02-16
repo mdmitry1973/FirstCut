@@ -54,25 +54,19 @@ public class AndroidGlyph2D {
     private void describe(GlyphDescription gd) 
     {
         int endPtIndex = 0;
-        int pointsCount = gd.getPointCount();
-        
-        if (pointsCount > 0)
+        points = new PointGlyph2D[gd.getPointCount()];
+        for (int i = 0; i < gd.getPointCount(); i++) 
         {
-	        points = new PointGlyph2D[pointsCount];
-	        
-	        for (int i = 0; i < pointsCount; i++) 
-	        {
-	            boolean endPt = gd.getEndPtOfContours(endPtIndex) == i;
-	            if (endPt) 
-	            {
-	                endPtIndex++;
-	            }
-	            points[i] = new PointGlyph2D(
-	                    gd.getXCoordinate(i),
-	                    gd.getYCoordinate(i),
-	                    (gd.getFlags(i) & GlyfDescript.ON_CURVE) != 0,
-	                    endPt);
-	        }
+            boolean endPt = gd.getEndPtOfContours(endPtIndex) == i;
+            if (endPt) 
+            {
+                endPtIndex++;
+            }
+            points[i] = new PointGlyph2D(
+                    gd.getXCoordinate(i),
+                    gd.getYCoordinate(i),
+                    (gd.getFlags(i) & GlyfDescript.ON_CURVE) != 0,
+                    endPt);
         }
     }
     
@@ -93,17 +87,12 @@ public class AndroidGlyph2D {
     private Path calculatePath()
     {
         Path path = new Path();
-        int numberOfPoints = 0;
+        int numberOfPoints = points.length;
         int i = 0;
         boolean endOfContour = true;
         PointGlyph2D startingPoint = null;
         PointGlyph2D lastCtrlPoint = null;
         Point lastPoint = null;
-        
-        if (points != null)
-        {
-        	numberOfPoints = points.length;
-        }
         
         while (i < numberOfPoints) 
         {
