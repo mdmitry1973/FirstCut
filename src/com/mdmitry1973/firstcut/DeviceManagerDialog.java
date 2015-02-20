@@ -70,7 +70,12 @@ public class DeviceManagerDialog extends Dialog implements OnClickListener, Dial
 	}
 	*/
 	
-
+	Button	buttonOK;
+	Button	buttonCancel;
+    Button	buttonRemoveDevice;
+    Button	buttonAdd;
+    Button	buttonSave;
+	
 	public DeviceManagerDialog(Context context) {
 		super(context);
 		
@@ -78,10 +83,17 @@ public class DeviceManagerDialog extends Dialog implements OnClickListener, Dial
 		setTitle(R.string.DeviceManager);
 		setCanceledOnTouchOutside(false);
 		
-		((Button)findViewById(R.id.buttonOK)).setOnClickListener(this);
-	    ((Button)findViewById(R.id.buttonRemoveDevice)).setOnClickListener(this);
-	    ((Button)findViewById(R.id.buttonAdd)).setOnClickListener(this);
-	    ((Button)findViewById(R.id.buttonSave)).setOnClickListener(this);
+		buttonOK = (Button)findViewById(R.id.buttonOK);
+		buttonCancel = (Button)findViewById(R.id.buttonCancel);
+	    buttonRemoveDevice = (Button)findViewById(R.id.buttonRemoveDevice);
+	    buttonAdd = (Button)findViewById(R.id.buttonAdd);
+	    buttonSave = (Button)findViewById(R.id.buttonSave);
+		
+		buttonOK.setOnClickListener(this);
+		buttonCancel.setOnClickListener(this);
+		buttonRemoveDevice.setOnClickListener(this);
+		buttonAdd.setOnClickListener(this);
+		buttonSave.setOnClickListener(this);
 	    
 	    Spinner spinner = (Spinner) findViewById(R.id.spinnerCurrentDevice);
 	    
@@ -90,6 +102,10 @@ public class DeviceManagerDialog extends Dialog implements OnClickListener, Dial
 			@Override
 			public void onItemSelected(AdapterView<?> parent, View view,
 					int position, long id) {
+				
+				buttonRemoveDevice.setEnabled(position > 2);
+				buttonSave .setEnabled(position > 2);
+				
 				setDeviceProperties();
 				
 			}
@@ -121,6 +137,7 @@ public class DeviceManagerDialog extends Dialog implements OnClickListener, Dial
 		String downCommand="PD";
 		String initCommand="IN;";
 		String separator=";";
+		String end="";
 		String currentDevice = (String)adp.getItem(sel);
 		
 		if (sharedPrefs.contains("Devices"))
@@ -149,6 +166,7 @@ public class DeviceManagerDialog extends Dialog implements OnClickListener, Dial
 						downCommand = elFirstItem.getAttribute("down");
 						initCommand = elFirstItem.getAttribute("init");
 						separator = elFirstItem.getAttribute("separator");
+						end = elFirstItem.getAttribute("end");
 						
 						EditText editTextDeviceName = (EditText) findViewById(R.id.editTextDeviceName);
 						EditText editTextResolution = (EditText) findViewById(R.id.editTextResolution);
@@ -158,6 +176,7 @@ public class DeviceManagerDialog extends Dialog implements OnClickListener, Dial
 						EditText editTextUp = (EditText) findViewById(R.id.editTextUp);
 						EditText editTextDown = (EditText) findViewById(R.id.editTextDown);
 						EditText editTextSep = (EditText) findViewById(R.id.editTextSep);
+						EditText editTextEnd = (EditText) findViewById(R.id.editTextEnd);
 						
 						editTextInit.setText(initCommand);
 						editTextAbsolute.setText(absoluteCommand);
@@ -166,6 +185,7 @@ public class DeviceManagerDialog extends Dialog implements OnClickListener, Dial
 						editTextDown.setText(downCommand);
 						editTextSep.setText(separator);
 						editTextResolution.setText(resolution);
+						editTextEnd.setText(end);
 						
 						editTextDeviceName.setText(name);
 						
@@ -235,6 +255,9 @@ public class DeviceManagerDialog extends Dialog implements OnClickListener, Dial
         }
         
         s.setSelection(sel);
+        
+        buttonRemoveDevice.setEnabled(sel > 2);
+		buttonSave .setEnabled(sel > 2);
 	}
 	
 	
@@ -242,6 +265,9 @@ public class DeviceManagerDialog extends Dialog implements OnClickListener, Dial
 		  switch (v.getId()) {
 		    case R.id.buttonOK:
 		    	onOK(v);
+		    break;  
+		    case R.id.buttonCancel:
+		    	onCancel(v);
 		    break;  
 		    case R.id.buttonRemoveDevice:
 		    	onRemove(v);
@@ -352,11 +378,25 @@ public class DeviceManagerDialog extends Dialog implements OnClickListener, Dial
 		EditText editTextUp = (EditText) findViewById(R.id.editTextUp);
 		EditText editTextDown = (EditText) findViewById(R.id.editTextDown);
 		EditText editTextSep = (EditText) findViewById(R.id.editTextSep);
+		EditText editTextEnd = (EditText) findViewById(R.id.editTextEnd);
 	   	 
 		SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getContext());
 		Spinner s = (Spinner) findViewById(R.id.spinnerCurrentDevice);
 		
 		ArrayAdapter<String> adp = (ArrayAdapter<String>) s.getAdapter();
+		
+		for(int i = 0; i < adp.getCount(); i++)
+		{
+			if (adp.getItem(i).compareTo(editTextDeviceName.getText().toString()) == 0)
+			{
+				AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+			    builder.setMessage(R.string.DeviceWrning).setTitle(R.string.app_name).setPositiveButton("Ok", null);
+			    AlertDialog dialog = builder.create();
+			    dialog.show();
+			    
+				return;
+			}
+		}
 		
 		if (sharedPrefs.contains("Devices"))
 	   	{
@@ -379,6 +419,7 @@ public class DeviceManagerDialog extends Dialog implements OnClickListener, Dial
 				elFirstItem.setAttribute("down", editTextDown.getText().toString());
 				elFirstItem.setAttribute("init", editTextInit.getText().toString());
 				elFirstItem.setAttribute("separator", editTextSep.getText().toString());
+				elFirstItem.setAttribute("end", editTextEnd.getText().toString());
 						
 				elRoot.appendChild(elFirstItem);
 				
@@ -415,6 +456,7 @@ public class DeviceManagerDialog extends Dialog implements OnClickListener, Dial
 		EditText editTextUp = (EditText) findViewById(R.id.editTextUp);
 		EditText editTextDown = (EditText) findViewById(R.id.editTextDown);
 		EditText editTextSep = (EditText) findViewById(R.id.editTextSep);
+		EditText editTextEnd = (EditText) findViewById(R.id.editTextEnd);
 	   	 
 		SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getContext());
 		Spinner s = (Spinner) findViewById(R.id.spinnerCurrentDevice);
@@ -450,6 +492,7 @@ public class DeviceManagerDialog extends Dialog implements OnClickListener, Dial
 						elFirstItem.setAttribute("down", editTextDown.getText().toString());
 						elFirstItem.setAttribute("init", editTextInit.getText().toString());
 						elFirstItem.setAttribute("separator", editTextSep.getText().toString());
+						elFirstItem.setAttribute("end", editTextEnd.getText().toString());
 						
 						saved = true;
 						
@@ -493,6 +536,11 @@ public class DeviceManagerDialog extends Dialog implements OnClickListener, Dial
 	public void onDismiss(DialogInterface dialogInterface)
 	{
 		//setListDevices();
+	}
+	
+	public void onCancel(View v)
+	{
+		dismiss();
 	}
 	
 	public void onOK(View v) {

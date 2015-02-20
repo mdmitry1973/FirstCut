@@ -110,4 +110,6 @@
 	<string name="OptionWrning2">Please change the name of option, option with this name already exists</string>
 	<string name="OptionWrning3">Option set name is empty</string>
 	<string name="OptionSetNotRemove">It is default preset that you cannot remove</string>
+	<string name="End">End</string>
+	<string name="DeviceWrning">Please change the name of device, device with this name already exists</string>
 </resources>

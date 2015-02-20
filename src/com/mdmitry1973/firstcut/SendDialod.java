@@ -95,7 +95,8 @@ public class SendDialod  extends Dialog  implements OnClickListener {
 				
 				if (strCutOptions.compareTo(name) == 0)
 				{
-					selCutOptions = arrayCutOptions.size() - 1;
+					selCutOptions = n + 1;
+					break;
 				}
 			} 
 	   		catch (Exception e) 

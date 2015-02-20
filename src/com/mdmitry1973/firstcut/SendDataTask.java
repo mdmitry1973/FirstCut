@@ -49,7 +49,7 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 		 "<CutOptions name=\"HP-GL Roland Pen\" ><option name=\"Speed\" val=\"VS40\" /><option name=\"Acceleration\" val=\"AS4\" /></CutOptions>",
 		 "<CutOptions name=\"GP-GL Cut Fast\" ><option name=\"Speed\" val=\"!7\" /></CutOptions>",
 		 "<CutOptions name=\"GP-GL Cut Slow\" ><option name=\"Speed\" val=\"!3\" /></CutOptions>",
-		 "<CutOptions name=\"GP-GL Cut Pen\" ><option name=\"Speed\" val=\"!10\" /></CutOptions>"};
+		 "<CutOptions name=\"GP-GL Pen\" ><option name=\"Speed\" val=\"!10\" /></CutOptions>"};
 	
 	public SendDataTask(Context context)
 	{
@@ -219,6 +219,7 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 			String downCommand="PD";
 			String initCommand="IN;";
 			String separator=";";
+			String end="";
 			String currentDevice = sharedPrefs.getString("currentDevice", "HP-GL");
 			int nRotate = sharedPrefs.getInt(currentDevice + "_Rotate", 0);
 			boolean bFlipVer = sharedPrefs.getBoolean(currentDevice + "_FlipVer", false);
@@ -373,6 +374,7 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 						downCommand = elFirstItem.getAttribute("down");
 						initCommand = elFirstItem.getAttribute("init");
 						separator = elFirstItem.getAttribute("separator");
+						end = elFirstItem.getAttribute("end");
 						
 						break;
 					}
@@ -744,14 +746,6 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 						data += String.format(upCommand + separator);
 						
 						checkForSendData(nMaxSend, nSentObj);
-						
-						//publishProgress((int) ((j / (float) nMaxSend) * 100));
-						
-						//if (data.length() > 100000)
-						//{
-						//	sendDataToPort(data.getBytes());
-						//	data = "";
-						//}
 					}
 				}
 				else
@@ -795,15 +789,9 @@ abstract class SendDataTask extends AsyncTask<String, Integer, Boolean>
 				data += String.format(upCommand + separator);
 				
 				checkForSendData(nMaxSend, nSentObj);
-				
-				//publishProgress((int) ((j / (float) nMaxSend) * 100));
-				
-				//if (data.length() > 100000)
-				//{
-				//	sendDataToPort(data.getBytes());
-				//	data = "";
-				//}
 			}
+			
+			data = data + end;
 			
 			if (data.length() > 0)
 			{
