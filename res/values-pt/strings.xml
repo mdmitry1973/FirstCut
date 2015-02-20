@@ -109,4 +109,6 @@
 	<string name="OptionWrning2">Por favor, altere o nome da opção, a opção com este nome já existe</string>
 	<string name="OptionWrning3">Opção nome do conjunto é vazio</string>
 	<string name="OptionSetNotRemove">É padrão predefinido que você não pode remover</string>
+	<string name="End">End</string>
+	<string name="DeviceWrning">Please change the name of device, device with this name already exists</string>
 </resources>

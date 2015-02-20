@@ -44,7 +44,7 @@
 
     </LinearLayout>
 
-    <LinearLayout
+   <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content" >
 
@@ -58,8 +58,12 @@
             android:id="@+id/editTextDeviceName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:singleLine="true"
             android:layout_weight="1"
             android:ems="10" />
+
+      
+
     </LinearLayout>
 
     <LinearLayout
@@ -98,6 +102,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+             android:singleLine="true"
             android:ems="10" />
 
     </LinearLayout>
@@ -115,6 +120,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+             android:singleLine="true"
             android:ems="10" />
     </LinearLayout>
 
@@ -133,6 +139,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+             android:singleLine="true"
             android:ems="10" />
     </LinearLayout>
     
@@ -150,6 +157,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+             android:singleLine="true"
             android:ems="10" />
     </LinearLayout>
     
@@ -166,6 +174,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+             android:singleLine="true"
             android:ems="10" />
     </LinearLayout>
     
@@ -182,6 +191,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+             android:singleLine="true"
             android:ems="10" />
     </LinearLayout>
     
@@ -200,6 +210,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+             android:singleLine="true"
             android:ems="10" />
     </LinearLayout>
 
@@ -207,12 +218,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content" >
 
-        <Button
-            android:id="@+id/buttonCancel"
-            style="?android:attr/buttonStyleSmall"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/Cancel" />
         
          <Button
              android:id="@+id/buttonOK"

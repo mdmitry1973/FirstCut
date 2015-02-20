@@ -71,7 +71,6 @@ public class DeviceManagerDialog extends Dialog implements OnClickListener, Dial
 	*/
 	
 	Button	buttonOK;
-	Button	buttonCancel;
     Button	buttonRemoveDevice;
     Button	buttonAdd;
     Button	buttonSave;
@@ -84,13 +83,11 @@ public class DeviceManagerDialog extends Dialog implements OnClickListener, Dial
 		setCanceledOnTouchOutside(false);
 		
 		buttonOK = (Button)findViewById(R.id.buttonOK);
-		buttonCancel = (Button)findViewById(R.id.buttonCancel);
 	    buttonRemoveDevice = (Button)findViewById(R.id.buttonRemoveDevice);
 	    buttonAdd = (Button)findViewById(R.id.buttonAdd);
 	    buttonSave = (Button)findViewById(R.id.buttonSave);
 		
 		buttonOK.setOnClickListener(this);
-		buttonCancel.setOnClickListener(this);
 		buttonRemoveDevice.setOnClickListener(this);
 		buttonAdd.setOnClickListener(this);
 		buttonSave.setOnClickListener(this);
@@ -265,9 +262,6 @@ public class DeviceManagerDialog extends Dialog implements OnClickListener, Dial
 		  switch (v.getId()) {
 		    case R.id.buttonOK:
 		    	onOK(v);
-		    break;  
-		    case R.id.buttonCancel:
-		    	onCancel(v);
 		    break;  
 		    case R.id.buttonRemoveDevice:
 		    	onRemove(v);
@@ -538,10 +532,6 @@ public class DeviceManagerDialog extends Dialog implements OnClickListener, Dial
 		//setListDevices();
 	}
 	
-	public void onCancel(View v)
-	{
-		dismiss();
-	}
 	
 	public void onOK(View v) {
 	   	Log.v("DriverManagerDialog", "onOK");

@@ -109,4 +109,6 @@
 	<string name="OptionWrning2">Пожалуйста, измените имя параметра, параметор с таким именем уже существует</string>
 	<string name="OptionWrning3">Имя комплекта параметров пусто</string>
 	<string name="OptionSetNotRemove">Это по умолчанию настройку, которую вы не можете удалить</string>
+	<string name="End">Конец</string>
+	<string name="DeviceWrning">Пожалуйста, измените имя устройства, устройства с таким именем уже существует</string>
 </resources>
