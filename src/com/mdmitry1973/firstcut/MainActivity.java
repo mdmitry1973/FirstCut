@@ -5,6 +5,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -282,36 +283,43 @@ public class MainActivity extends Activity
 	 PORT_TCPIP,Name,Port,IP\n
 	 */
 	
+	class CharacterPathFont
+	{
+		public Map<Character, Path> mapGlyph = null;
+		public TrueTypeFont font = null;
+		
+		public CharacterPathFont(TrueTypeFont font)
+		{
+			mapGlyph = new HashMap<Character, Path>();
+			this.font = font;
+		}
+	}
+	
 	String currentFontName = "";
-	private Map<Character, Path> mapGlyph = new HashMap<Character, Path>();
-	private Map<String, TrueTypeFont> mapFonts = new HashMap<String, TrueTypeFont>();
+	//private Map<String, CharacterPath> mapGlyph = new HashMap<String, CharacterPath>();
+	private Map<String, CharacterPathFont> mapFonts = new HashMap<String, CharacterPathFont>();
 	public static ProgressDialog  progressLoadFontDialog = null;
 	
 	@Override
 	public TrueTypeFont getFont(String fontName)
 	{
-		return mapFonts.get(fontName);
+		return mapFonts.get(fontName).font;
 	}
 	
 	public Path glyphPath(String fontName, Character c)
 	{
-		//if (!mapFonts.containsKey(fontName))
-		//{
-		//	getFont(fontName);
-		//}
-		
 		if (mapFonts.containsKey(fontName))
 		{
-			TrueTypeFont font = mapFonts.get(currentFontName);
+			TrueTypeFont font = mapFonts.get(fontName).font;
 			
-			if (mapGlyph.containsKey(c))
+			if (mapFonts.get(fontName).mapGlyph.containsKey(c))
 			{
-				return mapGlyph.get(c);
+				return mapFonts.get(fontName).mapGlyph.get(c);
 			}
 			
-			if (mapGlyph.size() > 100)
+			if (mapFonts.get(fontName).mapGlyph.size() > 100)
 			{
-				mapGlyph.clear();
+				mapFonts.get(fontName).mapGlyph.clear();
 			}
 			
 			try{
@@ -367,7 +375,7 @@ public class MainActivity extends Activity
 										
 										//path.computeBounds(bounds, false);
 										
-										mapGlyph.put(c, path);
+										mapFonts.get(fontName).mapGlyph.put(c, path);
 										
 										return path;
 									}
@@ -444,11 +452,6 @@ public class MainActivity extends Activity
 		LoadFont(currentFontName);
 	}
 	
-	//public TrueTypeFont getCurrentFont2()
-	//{
-	//	return getFont(currentFontName);
-	//}
-	
 	@Override
 	public DisplayMetrics getDisplayMetrics()
 	{
@@ -457,10 +460,15 @@ public class MainActivity extends Activity
 	
 	private class LoadFont extends AsyncTask<String, Void, Boolean> {
         
+		String currentFontName; 
+		boolean bBold;
+		boolean bItalic;
 	 	
-	 	public LoadFont() 
+	 	public LoadFont(String currentFontName, boolean bBold, boolean bItalic) 
 	 	{
-	 		 
+	 		this.currentFontName = currentFontName; 
+	 		this.bBold = bBold;
+	 		this.bItalic = bItalic;
 	 	}
 	 
 	 	@Override
@@ -468,66 +476,92 @@ public class MainActivity extends Activity
               
       			try {
       				
-      				String fontName = fontNames[0];
-      				InputStream stream;
+      				InputStream stream = null;
+      				String fontName = currentFontName;
       				
-      				if (fontName.compareTo("droid_sans") == 0)
+      				if (fontName.contains(".ttf"))
       				{
-      					stream = getResources().openRawResource(R.raw.droid_sans);
-      				}
-      				else
-      				if (fontName.compareTo("droid_sans_b") == 0)
-      				{
-      					stream = getResources().openRawResource(R.raw.droid_sans_b);
-      				}
-      				else
-      					if (fontName.compareTo("anonymous_pro") == 0)
+      					String[] fontdirs = { "/system/fonts", "/system/font", "/data/fonts" };
+      					
+      					for(int j = 0; j < fontdirs.length; j++)
       					{
-      						stream = getResources().openRawResource(R.raw.anonymous_pro);
-      					}
-      					else
-      						if (fontName.compareTo("anonymous_pro_b") == 0)
+      						File fontFile = new File(fontdirs[j], fontName); 
+      						
+      						if (fontFile.exists())
       						{
-      							stream = getResources().openRawResource(R.raw.anonymous_pro_b);
+      							stream = new FileInputStream(fontFile);
+      							break;
+      						}
+      					}
+      				}
+      				
+      				if (stream == null)
+      				{
+      					if (fontName.startsWith("droid_sans") == true)
+	      				{
+      						if (bBold == true)
+      						{
+      							stream = getResources().openRawResource(R.raw.droid_sans_b);
       						}
       						else
-      							if (fontName.compareTo("anonymous_pro_bi") == 0)
-      							{
-      								stream = getResources().openRawResource(R.raw.anonymous_pro_bi);
-      							}
-      							else
-      								if (fontName.compareTo("anonymous_pro_i") == 0)
-      								{
-      									stream = getResources().openRawResource(R.raw.anonymous_pro_i);
-      								}
-      								else
-      									if (fontName.compareTo("arimo") == 0)
-      									{
-      										stream = getResources().openRawResource(R.raw.arimo);
-      									}
-      									else
-      										if (fontName.compareTo("arimo_b") == 0)
-      										{
-      											stream = getResources().openRawResource(R.raw.arimo_b);
-      										}
-      										else
-      											if (fontName.compareTo("arimo_bi") == 0)
-      											{
-      												stream = getResources().openRawResource(R.raw.arimo_bi);
-      											}
-      											else
-      												if (fontName.compareTo("arimo_i") == 0)
-      												{
-      													stream = getResources().openRawResource(R.raw.arimo_i);
-      												}
-      				else
-      				{
-      					stream = getResources().openRawResource(R.raw.droid_sans);
+      						{
+      							stream = getResources().openRawResource(R.raw.droid_sans);
+      						}
+	      				}
+	      				else
+	      					if (fontName.startsWith("anonymous_pro") == true)
+	      					{
+	      						if (bBold == true && bItalic == true)
+	      						{
+	      							stream = getResources().openRawResource(R.raw.anonymous_pro_bi);
+	      						}
+	      						else
+	      						if (bItalic == true)
+		      					{
+		      							stream = getResources().openRawResource(R.raw.anonymous_pro_i);
+		      					}
+		      					else
+	      						if (bBold == true)
+	      						{
+	      							stream = getResources().openRawResource(R.raw.anonymous_pro_b);
+	      						}
+	      						else
+	      						{
+	      							stream = getResources().openRawResource(R.raw.anonymous_pro);
+	      						}
+	      					}
+	      					else
+							if (fontName.startsWith("arimo") == true)
+							{
+								if (bBold == true && bItalic == true)
+	      						{
+	      							stream = getResources().openRawResource(R.raw.arimo_bi);
+	      						}
+	      						else
+	      						if (bItalic == true)
+		      					{
+		      							stream = getResources().openRawResource(R.raw.arimo_i);
+		      					}
+		      					else
+	      						if (bBold == true)
+	      						{
+	      							stream = getResources().openRawResource(R.raw.arimo_b);
+	      						}
+	      						else
+	      						{
+	      							stream = getResources().openRawResource(R.raw.arimo);
+	      						}
+							}
+	      				else
+	      				{
+	      					stream = getResources().openRawResource(R.raw.droid_sans);
+	      				}
       				}
       				
       				TTFParser parser = new TTFParser();
+      				
       				try {
-      					mapFonts.put(fontName, parser.parseTTF(stream));
+      					mapFonts.put(fontName, new CharacterPathFont(parser.parseTTF(stream)));
       				} catch (IOException e) {
       					// TODO Auto-generated catch block
       					e.printStackTrace();
@@ -562,214 +596,13 @@ public class MainActivity extends Activity
 			progressLoadFontDialog.setCanceledOnTouchOutside(false);
 			progressLoadFontDialog.show();
 			
-			new LoadFont().execute(fontName);
-			/*
+			SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+			int bBold = sharedPrefs.getInt("currentFontBold", 0);
+			int bItalic = sharedPrefs.getInt("currentFontItalic", 0);
 			
-			InputStream stream;
-			
-			if (fontName.compareTo("droid_sans") == 0)
-			{
-				stream = getResources().openRawResource(R.raw.droid_sans);
-			}
-			else
-			if (fontName.compareTo("droid_sans_b") == 0)
-			{
-				stream = getResources().openRawResource(R.raw.droid_sans_b);
-			}
-			else
-				if (fontName.compareTo("anonymous_pro") == 0)
-				{
-					stream = getResources().openRawResource(R.raw.anonymous_pro);
-				}
-				else
-					if (fontName.compareTo("anonymous_pro_b") == 0)
-					{
-						stream = getResources().openRawResource(R.raw.anonymous_pro_b);
-					}
-					else
-						if (fontName.compareTo("anonymous_pro_bi") == 0)
-						{
-							stream = getResources().openRawResource(R.raw.anonymous_pro_bi);
-						}
-						else
-							if (fontName.compareTo("anonymous_pro_i") == 0)
-							{
-								stream = getResources().openRawResource(R.raw.anonymous_pro_i);
-							}
-							else
-								if (fontName.compareTo("arimo") == 0)
-								{
-									stream = getResources().openRawResource(R.raw.arimo);
-								}
-								else
-									if (fontName.compareTo("arimo_b") == 0)
-									{
-										stream = getResources().openRawResource(R.raw.arimo_b);
-									}
-									else
-										if (fontName.compareTo("arimo_bi") == 0)
-										{
-											stream = getResources().openRawResource(R.raw.arimo_bi);
-										}
-										else
-											if (fontName.compareTo("arimo_i") == 0)
-											{
-												stream = getResources().openRawResource(R.raw.arimo_i);
-											}
-			else
-			{
-				stream = getResources().openRawResource(R.raw.droid_sans);
-			}
-			
-			TTFParser parser = new TTFParser();
-			try {
-				mapFonts.put(fontName, parser.parseTTF(stream));
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			*/
+			new LoadFont(fontName, bBold > 0, bItalic > 0).execute(fontName);
 		}
-		
-		//return mapFonts.get(fontName);
 	}
-	
-	/*
-	TrueTypeFont font = null;
-	int indexGlyphPath = 0;
-	Path glyphPath = null;
-	
-	public Path glyphPath()
-	{
-		return glyphPath;
-	}
-	
-	public Path getGlyphPath()
-	{
-		Path path = null;
-		
-		try {
-		
-			if (font == null)
-			{
-				InputStream stream = getResources().openRawResource(R.raw.anonymous_pro);
-				TTFParser parser = new TTFParser();
-				//File fontFile = new File(getExternalCacheDir(), "Roboto-Black.ttf");
-				font = parser.parseTTF(stream);
-			}
-			
-			if (font != null)
-			{
-				float ver = font.getVersion();
-				GlyphTable glyphTqable = font.getGlyph();
-				
-				PostScriptTable ps = font.getPostScript();
-	           // fd.setFixedPitch( ps.getIsFixedPitch() > 0 );
-	           // fd.setItalicAngle( ps.getItalicAngle() );
-	            //fd.setItalic(ps.getItalicAngle() > 0);
-	            String[] names = ps.getGlyphNames();
-	            
-	            CMAPTable cmapTable = font.getCMAP();
-	            CMAPEncodingEntry[] cmaps = cmapTable.getCmaps();
-	            int[] glyphToCCode = null;
-	            if (cmaps.length == 1)
-	            	glyphToCCode = cmaps[0].getGlyphIdToCharacterCode();
-	            else {
-	            	for( int i=0; i<cmaps.length; i++ )
-	            	{
-		                if( cmaps[i].getPlatformId() == CMAPTable.PLATFORM_WINDOWS &&
-		                    cmaps[i].getPlatformEncodingId() == CMAPTable.ENCODING_UNICODE )
-		                {
-		                    glyphToCCode = cmaps[i].getGlyphIdToCharacterCode();
-		                }
-		            }
-	            }
-				
-				if (glyphTqable != null)
-				{
-					GlyphData dataGlyph[] = glyphTqable.getGlyphs();
-					
-					if (indexGlyphPath > dataGlyph.length)
-					{
-						indexGlyphPath = 0;
-					}
-					
-					for(int i = 0; i < dataGlyph.length; i++)
-					{
-						if (dataGlyph[i] == null)
-						{
-							if (indexGlyphPath == i)
-							{
-								indexGlyphPath++;
-								
-								if (indexGlyphPath > dataGlyph.length)
-								{
-									indexGlyphPath = 0;
-								}
-							}
-							
-							continue;
-						}
-						
-						if (indexGlyphPath == i)
-						{
-							GlyphDescription desc = dataGlyph[i].getDescription();
-							short nOfCon = dataGlyph[i].getNumberOfContours();
-							BoundingBox box = dataGlyph[i].getBoundingBox();
-							
-							AndroidGlyph2D g2d = new AndroidGlyph2D(desc, (short) 0, 0);
-							
-							path = g2d.getPath();
-							
-							RectF bounds = new RectF();
-							
-							path.computeBounds(bounds, false);
-							
-							String name = names[i];
-							int codeC = glyphToCCode[i];
-							
-							
-							if (desc.getClass().equals(GlyfCompositeDescript.class) == true)
-							{
-								//GlyfCompositeDescript descCompos = (GlyfCompositeDescript)desc;
-								
-								//int nContours = descCompos.getContourCount();
-								//int nPoints = descCompos.getPointCount();
-								//int inst[] = descCompos.getInstructions();
-								//boolean isComp = descCompos.isComposite();
-								//int nComp = descCompos.getComponentCount();
-							}
-							else
-							if (desc.getClass().equals(GlyfSimpleDescript.class) == true)
-							{
-								//GlyfSimpleDescript descSimple = (GlyfSimpleDescript)desc;
-								
-								//int nContours = descSimple.getContourCount();
-								//int nPoints = descSimple.getPointCount();
-								//int inst[] = descSimple.getInstructions();
-								//boolean isComp = descSimple.isComposite();
-								
-							}
-							else
-							{
-								
-							}
-							break;
-						}
-					}
-				}
-			}
-			
-			indexGlyphPath++;
-		} 
-		catch (Exception e) 
-		{
-			Log.e("MainActivity", "e=" + e);
-		} 
-		
-		return path;
-	}
-	*/
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -777,8 +610,6 @@ public class MainActivity extends Activity
 		setContentView(R.layout.activity_main);
 		
 		m_activity = this;
-		
-		//glyphPath = getGlyphPath();
 		
 		SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
 	   	
@@ -1233,7 +1064,7 @@ public class MainActivity extends Activity
 	        case R.id.action_about:
 	        {
 	        	AlertDialog.Builder builder = new AlertDialog.Builder(this);
-	        	builder.setMessage("mdmitry1973@gmail.com").setTitle(R.string.action_about).setPositiveButton("Ok", null);
+	        	builder.setMessage("mdmitry1973@gmail.com\nFont folders:/system/fonts;/system/font;/data/fonts").setTitle(R.string.action_about).setPositiveButton("Ok", null);
 	        	builder.setNeutralButton("Send log file", new DialogInterface.OnClickListener() {
 	                   @Override
 					public void onClick(DialogInterface dialog, int id) {

@@ -1,9 +1,14 @@
 package com.mdmitry1973.firstcut;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.fontbox.ttf.OS2WindowsMetricsTable;
@@ -58,9 +63,11 @@ public class ToolOptionDialogText extends Dialog
 	private CheckBox checkBoxItalic;
 	
 	private String currentLine = "";
-	private String []fontArrLines;
 	
 	private MainActivity activity;
+	
+	List<String> arrFontNames = null;
+	List<String> arrFonts = null;
 	
 	
 	/*
@@ -108,6 +115,9 @@ public class ToolOptionDialogText extends Dialog
 		setCanceledOnTouchOutside(false);
 		
 		activity = (MainActivity)context;
+		
+		arrFontNames = new ArrayList<String>();
+		arrFonts = new ArrayList<String>();
 		
 		this.currentPath = (CutObjectText)currentPath;
 		
@@ -221,8 +231,8 @@ public class ToolOptionDialogText extends Dialog
 		int bBold = sharedPrefs.getInt("currentFontBold", 0);
 		int bItalic = sharedPrefs.getInt("currentFontItalic", 0);
 		
-		checkBoxBold.setSelected(bBold == 1);
-   		checkBoxItalic.setSelected(bItalic == 1);
+		checkBoxBold.setChecked(bBold == 1);
+   		checkBoxItalic.setChecked(bItalic == 1);
    		
    		spinnerFontList.setOnItemSelectedListener(new OnItemSelectedListener() {
 
@@ -260,84 +270,101 @@ public class ToolOptionDialogText extends Dialog
 			}
 		}
 		
-		/*
-		if (false)
+		String[] fontdirs = { "/system/fonts", "/system/font", "/data/fonts" };
+		
+		for(int j = 0; j < fontdirs.length; j++)
 		{
-			TrueTypeFont font = activity.getFont(currentName);
-			OS2WindowsMetricsTable metric = font.getOS2Windows();
+			File fontDir = new File(fontdirs[j]);        
+			File fileFonts[] = fontDir.listFiles();
 			
-			int widthClass = metric.getWidthClass();
-			
-			Path path1 = activity.glyphPath('c');
-			Path path2 = activity.glyphPath('C');
-			RectF bounds = new RectF();
-			
-			path1.computeBounds(bounds, true);
-			path2.computeBounds(bounds, true);
-			
-			float width = 0;
-			float height = 0;
-			
-			for(int i = metric.getFirstCharIndex(); i < metric.getLastCharIndex(); i++)
+			if (fileFonts != null)
 			{
-				Path pathI = activity.glyphPath((char) i);
-				
-				if (pathI != null)
+				for (int i=0; i < fileFonts.length; i++)
 				{
-					pathI.computeBounds(bounds, true);
+					String fileName = fileFonts[i].getName();
+					String fileNameWithOutExt = fileName;
 					
-					if (width < bounds.width())
+					if (fileName.contains(".")) 
 					{
-						width = bounds.width();
+						fileNameWithOutExt = fileName.substring(0, fileName.lastIndexOf("."));
 					}
 					
-					if (height < bounds.height())
+					File fontFile = new File(fontDir, fileName); 
+					boolean found = false;
+					String fileNameWithoutStyles = fileNameWithOutExt;
+					
+					if (fileNameWithoutStyles.contains("_")) 
 					{
-						height = bounds.height();
+						fileNameWithoutStyles = fileNameWithoutStyles.substring(0, fileNameWithoutStyles.indexOf('_'));
 					}
+					
+					if (fileNameWithoutStyles.contains("-")) 
+					{
+						fileNameWithoutStyles = fileNameWithoutStyles.substring(0, fileNameWithoutStyles.indexOf('-'));
+					}
+					
+					for (int n = 0; n < arrFonts.size(); n++)
+					{
+						if (arrFonts.get(n).startsWith(fileNameWithoutStyles))
+						{
+							arrFonts.set(n, arrFonts.get(n) + "," + fileName);
+							found = true;
+							break;
+						}
+					}
+					
+					if (found == false)
+					{
+						arrFonts.add(fileNameWithoutStyles + "|" + fileName);
+						arrFontNames.add(fileNameWithoutStyles);
+						
+						if (currentName.startsWith(fileNameWithoutStyles))
+		   				{
+		   					sel = arrFonts.size() - 1;
+		   				}
+					}
+					
+				    Log.d("Files", "FileName:" + fileFonts[i].getName());
 				}
 			}
-			
-			int familyClass = metric.getFamilyClass();
 		}
-		*/
 		
-		String fontList = sharedPrefs.getString("FontList", "Droid Sans|droid_sans,droid_sans_b\n" +
-															"Arimo|arimo,arimo_b,arimo_i,arimo_bi\n" +
-															"Anonymous Pro|anonymous_pro,anonymous_pro_b,anonymous_pro_i,anonymous_pro_bi\n");
-		
-		fontArrLines = fontList.split("\n");
-		
-	   	List<String> arrLines = new ArrayList<String>();
-	   	
-	   	for(int i = 0; i < fontArrLines.length; i++)
-	   	{
-	   		String []fontArrProperties = fontArrLines[i].split("\\|");
-	   		
-	   		if (fontArrProperties.length > 1)
-	   		{
-	   			arrLines.add(fontArrProperties[0]);
-	   			
-	   			if (currentName.isEmpty() == false)
-	   			{
-		   			String []fontArrTypes = fontArrProperties[1].split(",");
+		if (arrFonts.size() == 0)
+		{
+			List<String> myArrayFontHardcodeList = Arrays.asList("Droid Sans|droid_sans,droid_sans_b\n" +
+														"Arimo|arimo,arimo_b,arimo_i,arimo_bi\n" +
+														"Anonymous Pro|anonymous_pro,anonymous_pro_b,anonymous_pro_i,anonymous_pro_bi\n");
+			arrFonts = new ArrayList<String>(myArrayFontHardcodeList);
+			
+			for(int i = 0; i < arrFonts.size(); i++)
+		   	{
+		   		String []fontArrProperties = arrFonts.get(i).split("\\|");
+		   		
+		   		if (fontArrProperties.length > 1)
+		   		{
+		   			arrFontNames.add(fontArrProperties[0]);
 		   			
-		   			for(int n = 0; n < fontArrTypes.length; n++)
-		   		   	{
-		   				if (fontArrTypes[n].compareTo(currentName) == 0)
-		   				{
-		   					sel = arrLines.size() - 1;
-		   					break;
-		   				}
-		   		   	}
-	   			}
-	   		}
-	   	}
-	   	
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(getContext(), android.R.layout.simple_list_item_1, arrLines);
+		   			if (currentName.isEmpty() == false)
+		   			{
+			   			String []fontArrTypes = fontArrProperties[1].split(",");
+			   			
+			   			for(int n = 0; n < fontArrTypes.length; n++)
+			   		   	{
+			   				if (fontArrTypes[n].compareTo(currentName) == 0)
+			   				{
+			   					sel = arrFontNames.size() - 1;
+			   					break;
+			   				}
+			   		   	}
+		   			}
+		   		}
+		   	}
+		}
+		
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(getContext(), android.R.layout.simple_list_item_1, arrFontNames);
         spinnerFontList.setAdapter(adapter);
         
-        if (sel == -1 || sel > arrLines.size())
+        if (sel == -1 || sel > arrFonts.size())
         {
         	sel = 0;
         }
@@ -349,9 +376,9 @@ public class ToolOptionDialogText extends Dialog
 	{
 		int pos = spinnerFontList.getSelectedItemPosition();
 		
-		if (pos < fontArrLines.length)
+		if (pos < arrFonts.size())
 		{
-			currentLine = fontArrLines[pos];
+			currentLine = arrFonts.get(pos);
 		}
 		
 		if (!currentLine.isEmpty())
@@ -381,11 +408,33 @@ public class ToolOptionDialogText extends Dialog
 	   					bSupporBold = true;
 	   					bSupporItalic = true;
 	   				}
+	   				
+	   				String fileNameWithoutStyles = fontArrTypes[n];
+					
+					//if (fileNameWithoutStyles.contains("_")) 
+					//{
+					//	fileNameWithoutStyles = fileNameWithoutStyles.substring(0, fileNameWithoutStyles.indexOf('_'));
+					//}
+					
+					//if (fileNameWithoutStyles.contains("-")) 
+					//{
+					//	fileNameWithoutStyles = fileNameWithoutStyles.substring(0, fileNameWithoutStyles.indexOf('-'));
+					//}
+	   				
+	   				if (fileNameWithoutStyles.contains("Bold") == true)
+	   				{
+	   					bSupporBold = true;
+	   				}
+	   				
+	   				if (fileNameWithoutStyles.contains("Italic") == true)
+	   				{
+	   					bSupporItalic = true;
+	   				}
 	   		   	}
 	   		}
 	   		
 	   		checkBoxBold.setEnabled(bSupporBold);
-	   		checkBoxItalic.setEnabled(bSupporBold);
+	   		checkBoxItalic.setEnabled(bSupporItalic);
 		}
 	}
 	
@@ -487,13 +536,40 @@ public class ToolOptionDialogText extends Dialog
     	
     	if (currentLine.isEmpty() == false)
     	{
+    		String currentFontName = "";
+    		
     		String []fontArrProperties = currentLine.split("\\|");
     		
     		if (fontArrProperties.length > 1)
     		{
     			String []fontArrTypes = fontArrProperties[1].split(",");
-    			editor.putString("currentFont", fontArrTypes[0]);
+    			
+    			if (fontArrTypes != null && fontArrTypes.length > 0)
+        		{
+    				currentFontName = fontArrTypes[0];
+    				
+					for(int m = 0; m < fontArrTypes.length; m++)
+					{
+						boolean hasBold = fontArrTypes[m].contains("Bold");
+						boolean hasItalic = fontArrTypes[m].contains("Italic");
+						boolean hasRegular = fontArrTypes[m].contains("Regular");
+						
+						if ((bBold > 0) == hasBold && (bItalic > 0) == hasItalic)
+						{
+							currentFontName = fontArrTypes[m];
+							break;
+						}
+						
+						if (bBold == 0 && bItalic == 0 && hasRegular)
+						{
+							currentFontName = fontArrTypes[m];
+							break;
+						}
+					}
+        		}
     		}
+    			
+    		editor.putString("currentFont", currentFontName);
     	}
     	
 		editor.commit();
