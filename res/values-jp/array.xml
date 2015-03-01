@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="pref_Unit">
+        <item>インチ</item>
+        <item>ミリメートル</item>
+        <item>センチ</item>
+    </string-array>    
+    <string-array name="listPortTypes">
+        <item>TCP/IP</item>
+        <item>USB</item>
+    </string-array>   
+     <string-array name="hardCodeCutOption">
+        <item>HP-GL Graphtec ファストカット</item>
+        <item>HP-GL Graphtec スローカット</item>
+        <item>HP-GL Graphtec ペン</item>
+        <item>HP-GL Mutoh ファストカット</item>
+        <item>HP-GL Mutoh スローカット</item>
+        <item>HP-GL Mutoh ファストペン</item>
+        <item>HP-GL Mutoh ペンスロー</item>
+        <item>HP-GL Roland ファストカット</item>
+        <item>HP-GL Roland スローカット</item>
+        <item>HP-GL Roland ペン</item>
+        <item>GP-GL ファストカット</item>
+        <item>GP-GL スローカット</item>
+        <item>GP-GL ペンをカット</item>
+    </string-array>   
+</resources>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="pref_Unit">
+        <item>寸</item>
+        <item>毫米</item>
+        <item>厘米</item>
+    </string-array>    
+    <string-array name="listPortTypes">
+        <item>TCP/IP</item>
+        <item>USB</item>
+    </string-array>   
+     <string-array name="hardCodeCutOption">
+        <item>HP-GL Graphtec 热敏记录快速切</item>
+        <item>HP-GL Graphtec 热敏切慢</item>
+        <item>HP-GL Graphtec 热敏记录笔</item>
+        <item>HP-GL Mutoh 武藤切快</item>
+        <item>HP-GL Mutoh 武藤切慢</item>
+        <item>HP-GL Mutoh 武藤快笔</item>
+        <item>HP-GL Mutoh 武藤笔慢</item>
+        <item>HP-GL Roland 罗兰快速切</item>
+        <item>HP-GL Roland 罗兰切慢</item>
+        <item>HP-GL Roland 罗兰笔</item>
+        <item>GP-GL 快速切</item>
+        <item>GP-GL 切慢</item>
+        <item>GP-GL 削笔</item>
+    </string-array>   
+</resources>
